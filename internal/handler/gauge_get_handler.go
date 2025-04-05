@@ -44,9 +44,9 @@ func (h *GaugeGetHandler) ServeHTTP(response http.ResponseWriter, request *http.
 	response.Header().Set("Content-Type", "application/json")
 	response.WriteHeader(http.StatusOK)
 
-	if jsonErr := json.NewEncoder(response).Encode(gaugeModel); err != nil {
+	if jsonErr := json.NewEncoder(response).Encode(gaugeModel); jsonErr != nil {
 		h.Log.Error(jsonErr.Error())
-		http.Error(response, err.Error(), http.StatusInternalServerError)
+		http.Error(response, jsonErr.Error(), http.StatusInternalServerError)
 		return
 	}
 

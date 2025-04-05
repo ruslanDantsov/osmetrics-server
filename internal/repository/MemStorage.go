@@ -76,6 +76,6 @@ func (s *MemStorage) SaveCounterMetric(rawModel *model.CounterMetricModel) (*mod
 		s.Log.Info(fmt.Sprintf("SAVE counter_metric type=%v value=%v", rawModel.MetricType, rawModel.Value))
 	}
 
-	updatedModel, _ := s.Storage[rawModel.MetricType.String()]
+	updatedModel := s.Storage[rawModel.MetricType.String()]
 	return updatedModel.(*model.CounterMetricModel), nil
 }

@@ -44,7 +44,7 @@ func (h *CounterGetHandler) ServeHTTP(response http.ResponseWriter, request *htt
 	response.Header().Set("Content-Type", "application/json")
 	response.WriteHeader(http.StatusOK)
 
-	if jsonErr := json.NewEncoder(response).Encode(counterModel); err != nil {
+	if jsonErr := json.NewEncoder(response).Encode(counterModel); jsonErr != nil {
 		h.Log.Error(jsonErr.Error())
 		http.Error(response, jsonErr.Error(), http.StatusInternalServerError)
 		return
