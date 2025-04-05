@@ -2,6 +2,7 @@ package metric
 
 import (
 	"fmt"
+	"strings"
 )
 
 type MetricType string
@@ -37,8 +38,13 @@ func ListMetricTypes() []MetricType {
 }
 
 func ParseMetricType(s string) (MetricType, error) {
-	if mt, exists := metricTypeMap[s]; exists {
-		return mt, nil
+	//TODO: uncomment in  iter2
+	//if mt, exists := metricTypeMap[s]; exists {
+	//	return mt, nil
+	//}
+	//return "", fmt.Errorf("invalid MetricType: %s", s)
+	if strings.TrimSpace(s) == "" {
+		return "", fmt.Errorf("invalid MetricType: %s", s)
 	}
-	return "", fmt.Errorf("invalid MetricType: %s", s)
+	return MetricType(s), nil
 }
