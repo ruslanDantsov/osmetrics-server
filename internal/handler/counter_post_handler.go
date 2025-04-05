@@ -37,6 +37,7 @@ func (h *CounterPostHandler) ServeHTTP(response http.ResponseWriter, request *ht
 	if err != nil {
 		h.Log.Error(err.Error())
 		http.Error(response, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	_, err = h.Storage.SaveCounterMetric(counterModel)
