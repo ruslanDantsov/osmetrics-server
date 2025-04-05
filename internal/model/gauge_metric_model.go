@@ -6,13 +6,13 @@ import (
 )
 
 type GaugeMetricModel struct {
-	MetricType metric.MetricType `json:"metric_type"`
-	Value      float64           `json:"value"`
+	Name  metric.MetricName
+	Value float64
 }
 
-func NewGaugeMetricModelWithRawTypes(metricTypeRaw string, valueRaw string) (*GaugeMetricModel, error) {
+func NewGaugeMetricModelWithRawValues(metricNameRaw string, valueRaw string) (*GaugeMetricModel, error) {
 
-	metricType, err := metric.ParseMetricType(metricTypeRaw)
+	metricName, err := metric.ParseMetricName(metricNameRaw)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func NewGaugeMetricModelWithRawTypes(metricTypeRaw string, valueRaw string) (*Ga
 	}
 
 	return &GaugeMetricModel{
-		MetricType: metricType,
-		Value:      floatValue,
+		Name:  metricName,
+		Value: floatValue,
 	}, nil
 }

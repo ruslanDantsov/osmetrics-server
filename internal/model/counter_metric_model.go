@@ -6,12 +6,12 @@ import (
 )
 
 type CounterMetricModel struct {
-	MetricType metric.MetricType
-	Value      int64
+	Name  metric.MetricName
+	Value int64
 }
 
-func NewCounterMetricModelWithRawTypes(metricTypeRaw string, valueRaw string) (*CounterMetricModel, error) {
-	metricType, err := metric.ParseMetricType(metricTypeRaw)
+func NewCounterMetricModelWithRawValues(metricNameRaw string, valueRaw string) (*CounterMetricModel, error) {
+	metricName, err := metric.ParseMetricName(metricNameRaw)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func NewCounterMetricModelWithRawTypes(metricTypeRaw string, valueRaw string) (*
 	}
 
 	return &CounterMetricModel{
-		MetricType: metricType,
-		Value:      intValue,
+		Name:  metricName,
+		Value: intValue,
 	}, nil
 }

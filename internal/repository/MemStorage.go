@@ -10,9 +10,9 @@ import (
 
 type Storager interface {
 	SaveGaugeMetric(model *model.GaugeMetricModel) (*model.GaugeMetricModel, error)
-	GetGaugeMetric(metricType metric.MetricType) (*model.GaugeMetricModel, bool)
+	GetGaugeMetric(metricType metric.MetricName) (*model.GaugeMetricModel, bool)
 	SaveCounterMetric(model *model.CounterMetricModel) (*model.CounterMetricModel, error)
-	GetCounterMetric(metricType metric.MetricType) (*model.CounterMetricModel, bool)
+	GetCounterMetric(metricType metric.MetricName) (*model.CounterMetricModel, bool)
 }
 
 type MemStorage struct {
@@ -28,11 +28,11 @@ func NewMemStorage(log logging.Logger) *MemStorage {
 	}
 }
 
-func (s *MemStorage) GetGaugeMetric(metricType metric.MetricType) (*model.GaugeMetricModel, bool) {
+func (s *MemStorage) GetGaugeMetric(metricName metric.MetricName) (*model.GaugeMetricModel, bool) {
 
-	if valRaw, found := s.Storage[metricType.String()]; found {
+	if valRaw, found := s.Storage[metricName.String()]; found {
 		if val, ok := valRaw.(*model.GaugeMetricModel); ok {
-			s.Log.Info(fmt.Sprintf("GET gauge_metric type=%v value=%v", val.MetricType, val.Value))
+			s.Log.Info(fmt.Sprintf("GET gauge_metric name=%v value=%v", val.Name, val.Value))
 			return val, true
 		}
 	}
@@ -40,11 +40,11 @@ func (s *MemStorage) GetGaugeMetric(metricType metric.MetricType) (*model.GaugeM
 	return nil, false
 }
 
-func (s *MemStorage) GetCounterMetric(metricType metric.MetricType) (*model.CounterMetricModel, bool) {
+func (s *MemStorage) GetCounterMetric(metricName metric.MetricName) (*model.CounterMetricModel, bool) {
 
-	if valRaw, found := s.Storage[metricType.String()]; found {
+	if valRaw, found := s.Storage[metricName.String()]; found {
 		if val, ok := valRaw.(*model.CounterMetricModel); ok {
-			s.Log.Info(fmt.Sprintf("GET counter_metric type=%v value=%v", val.MetricType, val.Value))
+			s.Log.Info(fmt.Sprintf("GET counter_metric name=%v value=%v", val.Name, val.Value))
 			return val, true
 		}
 	}
@@ -56,26 +56,26 @@ func (s *MemStorage) SaveGaugeMetric(model *model.GaugeMetricModel) (*model.Gaug
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.Storage[model.MetricType.String()] = model
-	s.Log.Info(fmt.Sprintf("SAVE gauge_metric type=%v value=%v", model.MetricType, model.Value))
+	s.Storage[model.Name.String()] = model
+	s.Log.Info(fmt.Sprintf("SAVE gauge_metric name=%v value=%v", model.Name, model.Value))
 
 	return model, nil
 }
 
 func (s *MemStorage) SaveCounterMetric(rawModel *model.CounterMetricModel) (*model.CounterMetricModel, error) {
-	existingCounterModel, found := s.GetCounterMetric(rawModel.MetricType)
+	existingCounterModel, found := s.GetCounterMetric(rawModel.Name)
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if found {
 		existingCounterModel.Value += rawModel.Value
-		s.Log.Info(fmt.Sprintf("UPDATE counter_metric type=%v value=%v", existingCounterModel.MetricType, existingCounterModel.Value))
+		s.Log.Info(fmt.Sprintf("UPDATE counter_metric name=%v value=%v", existingCounterModel.Name, existingCounterModel.Value))
 	} else {
-		s.Storage[rawModel.MetricType.String()] = rawModel
-		s.Log.Info(fmt.Sprintf("SAVE counter_metric type=%v value=%v", rawModel.MetricType, rawModel.Value))
+		s.Storage[rawModel.Name.String()] = rawModel
+		s.Log.Info(fmt.Sprintf("SAVE counter_metric name=%v value=%v", rawModel.Name, rawModel.Value))
 	}
 
-	updatedModel := s.Storage[rawModel.MetricType.String()]
+	updatedModel := s.Storage[rawModel.Name.String()]
 	return updatedModel.(*model.CounterMetricModel), nil
 }

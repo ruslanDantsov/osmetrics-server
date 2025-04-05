@@ -11,27 +11,21 @@ func main() {
 	//TODO: move to config
 	log := logging.NewStdoutLogger()
 	storage := repository.NewMemStorage(log)
-	gaugePostHandler := handler.NewGaugePostHandler(storage, log)
-	gaugeGetHandler := handler.NewGaugeGetHandler(storage, log)
-	counterPostHandler := handler.NewCounterPostHandler(storage, log)
-	counterGetHandler := handler.NewCounterGetHandler(storage, log)
+	metricGetHandler := handler.NewMetricGetHandler(storage, log)
+	metricPostHandler := handler.NewMetricPostHandler(storage, log)
 	commonHandler := handler.NewCommonHandler(log)
 
-	startServer(commonHandler, gaugePostHandler, gaugeGetHandler, counterPostHandler, counterGetHandler)
+	startServer(commonHandler, metricPostHandler, metricGetHandler)
 }
 
 func startServer(commonHandler *handler.CommonHandler,
-	gaugePostHandler *handler.GaugePostHandler,
-	gaugeGetHandler *handler.GaugeGetHandler,
-	counterPostHandler *handler.CounterPostHandler,
-	counterGetHandler *handler.CounterGetHandler) {
+	metricPostHandler *handler.MetricPostHandler,
+	metricGetHandler *handler.MetricGetHandler) {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc(`/`, commonHandler.ServeHTTP)
-	mux.HandleFunc("POST /update/gauge/{type}/{value}", gaugePostHandler.ServeHTTP)
-	mux.HandleFunc("GET /gauge/{type}", gaugeGetHandler.ServeHTTP)
-	mux.HandleFunc("POST /update/counter/{type}/{value}", counterPostHandler.ServeHTTP)
-	mux.HandleFunc("GET /counter/{type}", counterGetHandler.ServeHTTP)
+	mux.HandleFunc("GET /{type}/{name}", metricGetHandler.ServeHTTP)
+	mux.HandleFunc("POST /update/{type}/{name}/{value}", metricPostHandler.ServeHTTP)
 
 	err := http.ListenAndServe(`localhost:8080`, mux)
 	if err != nil {
