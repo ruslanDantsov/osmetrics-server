@@ -105,7 +105,7 @@ func (ms *MetricService) sendGaugeMetric(name string, value float64) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Non-OK response for metric %s: %s\n", name, resp.Status)
+		return fmt.Errorf("bad response for metric %s: %s", name, resp.Status)
 	}
 
 	return nil
@@ -120,7 +120,7 @@ func (ms *MetricService) sendCounterMetric(name string, value int64) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Non-OK response for metric %s: %s\n", name, resp.Status)
+		return fmt.Errorf("bad response for metric %s: %s", name, resp.Status)
 	}
 
 	return nil
