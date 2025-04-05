@@ -6,7 +6,7 @@ import (
 )
 
 type CounterMetricModel struct {
-	Name  metric.MetricName
+	Name  metric.Metric
 	Value int64
 }
 

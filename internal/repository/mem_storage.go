@@ -8,11 +8,13 @@ import (
 	"sync"
 )
 
+//TODO: split logic for repository and service layers
+
 type Storager interface {
 	SaveGaugeMetric(model *model.GaugeMetricModel) (*model.GaugeMetricModel, error)
-	GetGaugeMetric(metricType metric.MetricName) (*model.GaugeMetricModel, bool)
+	GetGaugeMetric(metricType metric.Metric) (*model.GaugeMetricModel, bool)
 	SaveCounterMetric(model *model.CounterMetricModel) (*model.CounterMetricModel, error)
-	GetCounterMetric(metricType metric.MetricName) (*model.CounterMetricModel, bool)
+	GetCounterMetric(metricType metric.Metric) (*model.CounterMetricModel, bool)
 }
 
 type MemStorage struct {
@@ -28,7 +30,7 @@ func NewMemStorage(log logging.Logger) *MemStorage {
 	}
 }
 
-func (s *MemStorage) GetGaugeMetric(metricName metric.MetricName) (*model.GaugeMetricModel, bool) {
+func (s *MemStorage) GetGaugeMetric(metricName metric.Metric) (*model.GaugeMetricModel, bool) {
 
 	if valRaw, found := s.Storage[metricName.String()]; found {
 		if val, ok := valRaw.(*model.GaugeMetricModel); ok {
@@ -40,7 +42,7 @@ func (s *MemStorage) GetGaugeMetric(metricName metric.MetricName) (*model.GaugeM
 	return nil, false
 }
 
-func (s *MemStorage) GetCounterMetric(metricName metric.MetricName) (*model.CounterMetricModel, bool) {
+func (s *MemStorage) GetCounterMetric(metricName metric.Metric) (*model.CounterMetricModel, bool) {
 
 	if valRaw, found := s.Storage[metricName.String()]; found {
 		if val, ok := valRaw.(*model.CounterMetricModel); ok {

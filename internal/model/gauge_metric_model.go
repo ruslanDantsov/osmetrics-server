@@ -6,7 +6,7 @@ import (
 )
 
 type GaugeMetricModel struct {
-	Name  metric.MetricName
+	Name  metric.Metric
 	Value float64
 }
 
