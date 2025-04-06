@@ -57,7 +57,7 @@ func (h *MetricGetHandler) handleGetCounterMetric(response http.ResponseWriter, 
 	response.Header().Set("Content-Type", "text/plain")
 	response.WriteHeader(http.StatusOK)
 
-	if _, formatErr := fmt.Fprintf(response, strconv.FormatInt(counterModel.Value, 10)); formatErr != nil {
+	if _, formatErr := fmt.Fprint(response, strconv.FormatInt(counterModel.Value, 10)); formatErr != nil {
 		h.Log.Error(formatErr.Error())
 		http.Error(response, formatErr.Error(), http.StatusInternalServerError)
 		return
@@ -86,7 +86,7 @@ func (h *MetricGetHandler) handleGetGaugeMetric(response http.ResponseWriter, re
 	response.Header().Set("Content-Type", "text/plain")
 	response.WriteHeader(http.StatusOK)
 
-	if _, formatErr := fmt.Fprintf(response, strconv.FormatFloat(gaugeModel.Value, 'f', -1, 64)); formatErr != nil {
+	if _, formatErr := fmt.Fprint(response, strconv.FormatFloat(gaugeModel.Value, 'f', -1, 64)); formatErr != nil {
 		h.Log.Error(formatErr.Error())
 		http.Error(response, formatErr.Error(), http.StatusInternalServerError)
 		return
