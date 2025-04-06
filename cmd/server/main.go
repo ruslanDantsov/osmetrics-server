@@ -13,7 +13,7 @@ func main() {
 	storage := repository.NewMemStorage(log)
 	metricGetHandler := handler.NewMetricGetHandler(storage, log)
 	metricPostHandler := handler.NewMetricPostHandler(storage, log)
-	commonHandler := handler.NewCommonHandler(log)
+	commonHandler := handler.NewCommonHandler(storage, log)
 
 	startServer(commonHandler, metricPostHandler, metricGetHandler)
 }
@@ -23,7 +23,7 @@ func startServer(commonHandler *handler.CommonHandler,
 	metricGetHandler *handler.MetricGetHandler) {
 
 	mux := http.NewServeMux()
-	mux.HandleFunc(`/`, commonHandler.ServeHTTP)
+	mux.HandleFunc(`GET /`, commonHandler.ServeHTTP)
 	mux.HandleFunc("GET /{type}/{name}", metricGetHandler.ServeHTTP)
 	mux.HandleFunc("POST /update/{type}/{name}/{value}", metricPostHandler.ServeHTTP)
 

@@ -1,12 +1,12 @@
 package handler
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
 	"github.com/ruslanDantsov/osmetrics-server/internal/repository"
 	"net/http"
+	"strconv"
 )
 
 type MetricGetHandler struct {
@@ -54,12 +54,12 @@ func (h *MetricGetHandler) handleGetCounterMetric(response http.ResponseWriter, 
 		return
 	}
 
-	response.Header().Set("Content-Type", "application/json")
+	response.Header().Set("Content-Type", "text/plain")
 	response.WriteHeader(http.StatusOK)
 
-	if jsonErr := json.NewEncoder(response).Encode(counterModel); jsonErr != nil {
-		h.Log.Error(jsonErr.Error())
-		http.Error(response, jsonErr.Error(), http.StatusInternalServerError)
+	if _, formatErr := fmt.Fprintf(response, strconv.FormatInt(counterModel.Value, 10)); formatErr != nil {
+		h.Log.Error(formatErr.Error())
+		http.Error(response, formatErr.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -83,12 +83,12 @@ func (h *MetricGetHandler) handleGetGaugeMetric(response http.ResponseWriter, re
 		return
 	}
 
-	response.Header().Set("Content-Type", "application/json")
+	response.Header().Set("Content-Type", "text/plain")
 	response.WriteHeader(http.StatusOK)
 
-	if jsonErr := json.NewEncoder(response).Encode(gaugeModel); jsonErr != nil {
-		h.Log.Error(jsonErr.Error())
-		http.Error(response, jsonErr.Error(), http.StatusInternalServerError)
+	if _, formatErr := fmt.Fprintf(response, strconv.FormatFloat(gaugeModel.Value, 'f', -1, 64)); formatErr != nil {
+		h.Log.Error(formatErr.Error())
+		http.Error(response, formatErr.Error(), http.StatusInternalServerError)
 		return
 	}
 }

@@ -15,6 +15,7 @@ type Storager interface {
 	GetGaugeMetric(metricType metric.Metric) (*model.GaugeMetricModel, bool)
 	SaveCounterMetric(model *model.CounterMetricModel) (*model.CounterMetricModel, error)
 	GetCounterMetric(metricType metric.Metric) (*model.CounterMetricModel, bool)
+	GetKnownMetrics() []string
 }
 
 type MemStorage struct {
@@ -28,6 +29,16 @@ func NewMemStorage(log logging.Logger) *MemStorage {
 		Storage: make(map[string]interface{}),
 		Log:     log,
 	}
+}
+
+func (s *MemStorage) GetKnownMetrics() []string {
+	metricNames := make([]string, 0, len(s.Storage))
+
+	for metricName := range s.Storage {
+		metricNames = append(metricNames, metricName)
+	}
+
+	return metricNames
 }
 
 func (s *MemStorage) GetGaugeMetric(metricName metric.Metric) (*model.GaugeMetricModel, bool) {
