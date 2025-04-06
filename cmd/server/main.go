@@ -26,7 +26,7 @@ func startServer(commonHandler *handler.CommonHandler,
 
 	mux := http.NewServeMux()
 	mux.HandleFunc(`/`, metricListHandler.ServeHTTP)
-	mux.HandleFunc("GET /{type}/{name}", metricGetHandler.ServeHTTP)
+	mux.HandleFunc("GET /value/{type}/{name}", metricGetHandler.ServeHTTP)
 	mux.HandleFunc("POST /update/{type}/{name}/{value}", metricPostHandler.ServeHTTP)
 	mux.HandleFunc(`/{path}/`, commonHandler.ServeHTTP)
 
