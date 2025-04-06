@@ -25,7 +25,7 @@ func (h *MetricPostHandler) ServeHTTP(response http.ResponseWriter, request *htt
 
 	contentType := request.Header.Get("Content-Type")
 	if contentType != "text/plain" {
-		h.Log.Error("Content-Type must be text/plain")
+		h.Log.Error(fmt.Sprintf("Content-Type must be text/plain. Content-Type of request is %v", contentType))
 		http.Error(response, "Content-Type must be text/plain", http.StatusBadRequest)
 		return
 	}
