@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/ruslanDantsov/osmetrics-server/internal/config"
 	"github.com/ruslanDantsov/osmetrics-server/internal/handler"
 	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
 	"github.com/ruslanDantsov/osmetrics-server/internal/repository"
@@ -16,14 +17,16 @@ func main() {
 	metricPostHandler := handler.NewMetricPostHandler(storage, log)
 	commonHandler := handler.NewCommonHandler(log)
 	metricListHandler := handler.NewMetricListHandler(storage, log)
+	serverConfig := config.NewServerConfig()
 
-	startServer(commonHandler, metricPostHandler, metricGetHandler, metricListHandler)
+	startServer(commonHandler, metricPostHandler, metricGetHandler, metricListHandler, serverConfig)
 }
 
 func startServer(commonHandler *handler.CommonHandler,
 	metricPostHandler *handler.MetricPostHandler,
 	metricGetHandler *handler.MetricGetHandler,
-	metricListHandler *handler.MetricListHandler) {
+	metricListHandler *handler.MetricListHandler,
+	serverConfig *config.ServerConfig) {
 
 	router := gin.Default()
 	router.GET(`/`, metricListHandler.ServeHTTP)
@@ -31,7 +34,7 @@ func startServer(commonHandler *handler.CommonHandler,
 	router.POST("/update/:type/:name/:value", metricPostHandler.ServeHTTP)
 	router.Any(`/:path/`, commonHandler.ServeHTTP)
 
-	err := http.ListenAndServe(`localhost:8080`, router)
+	err := http.ListenAndServe(serverConfig.Address, router)
 	if err != nil {
 		panic(err)
 	}

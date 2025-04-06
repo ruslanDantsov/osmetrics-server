@@ -1,36 +1,16 @@
 package config
 
-type Server struct {
-	Port   string
-	Domain string
+import "flag"
+
+type ServerConfig struct {
+	Address string
 }
 
-type envVar struct {
-	Key          string
-	DefaultValue string
-}
+func NewServerConfig() *ServerConfig {
+	addr := flag.String("a", "localhost:8080", "Address of the HTTP server")
+	flag.Parse()
 
-var (
-	PortVar = envVar{
-		Key:          "PORT",
-		DefaultValue: "8080",
+	return &ServerConfig{
+		Address: *addr,
 	}
-	DomainVar = envVar{
-		Key:          "DOMAIN",
-		DefaultValue: "localhost",
-	}
-)
-
-func NewServerConfig() *Server {
-	return &Server{
-		Port:   getEnv(PortVar),
-		Domain: getEnv(DomainVar),
-	}
-}
-
-func getEnv(variable envVar) string {
-	if len(variable.Key) == 0 {
-		panic("Unknown key")
-	}
-	return variable.DefaultValue
 }

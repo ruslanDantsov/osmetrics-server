@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"github.com/ruslanDantsov/osmetrics-server/internal/client"
+	"github.com/ruslanDantsov/osmetrics-server/internal/config"
 	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
 	"math/rand"
@@ -15,13 +16,15 @@ type MetricService struct {
 	mu      sync.Mutex
 	Log     logging.Logger
 	Client  client.RestClient
+	config  *config.AgentConfig
 	Metrics map[metric.Metric]interface{}
 }
 
-func NewMetricService(log logging.Logger, client client.RestClient) *MetricService {
+func NewMetricService(log logging.Logger, client client.RestClient, agentConfig *config.AgentConfig) *MetricService {
 	return &MetricService{
 		Log:     log,
 		Client:  client,
+		config:  agentConfig,
 		Metrics: make(map[metric.Metric]interface{}),
 	}
 }
@@ -100,7 +103,7 @@ func (ms *MetricService) SendMetrics() {
 }
 
 func (ms *MetricService) sendGaugeMetric(name string, value float64) error {
-	url := fmt.Sprintf("http://localhost:8080/update/gauge/%s/%f", name, value)
+	url := fmt.Sprintf("http://%v/update/gauge/%s/%f", ms.config.Address, name, value)
 	resp, err := ms.Client.R().
 		SetHeader("Content-Type", "text/plain").
 		Post(url)
@@ -117,7 +120,7 @@ func (ms *MetricService) sendGaugeMetric(name string, value float64) error {
 }
 
 func (ms *MetricService) sendCounterMetric(name string, value int64) error {
-	url := fmt.Sprintf("http://localhost:8080/update/counter/%s/%v", name, value)
+	url := fmt.Sprintf("http://%v/update/counter/%s/%v", ms.config.Address, name, value)
 	resp, err := ms.Client.R().
 		SetHeader("Content-Type", "text/plain").
 		Post(url)
