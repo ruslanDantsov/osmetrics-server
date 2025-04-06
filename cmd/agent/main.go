@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
 	"github.com/ruslanDantsov/osmetrics-server/internal/service"
 	"time"
@@ -13,7 +14,8 @@ const (
 
 func main() {
 	log := logging.NewStdoutLogger()
-	metricService := service.NewMetricService(log)
+	client := resty.New()
+	metricService := service.NewMetricService(log, client)
 	go func() {
 		ticker := time.NewTicker(CollectorTimeInSecond * time.Second)
 		defer ticker.Stop()

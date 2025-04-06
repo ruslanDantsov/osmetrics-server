@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/ruslanDantsov/osmetrics-server/internal/client"
 	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
 	"math/rand"
@@ -13,12 +14,14 @@ import (
 type MetricService struct {
 	mu      sync.Mutex
 	Log     logging.Logger
+	Client  client.RestClient
 	Metrics map[metric.Metric]interface{}
 }
 
-func NewMetricService(log logging.Logger) *MetricService {
+func NewMetricService(log logging.Logger, client client.RestClient) *MetricService {
 	return &MetricService{
 		Log:     log,
+		Client:  client,
 		Metrics: make(map[metric.Metric]interface{}),
 	}
 }
@@ -98,14 +101,16 @@ func (ms *MetricService) SendMetrics() {
 
 func (ms *MetricService) sendGaugeMetric(name string, value float64) error {
 	url := fmt.Sprintf("http://localhost:8080/update/gauge/%s/%f", name, value)
-	resp, err := http.Post(url, "text/plain", nil)
+	resp, err := ms.Client.R().
+		SetHeader("Content-Type", "text/plain").
+		Post(url)
+
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("bad response for metric %s: %s", name, resp.Status)
+	if resp.StatusCode() != http.StatusOK {
+		return fmt.Errorf("bad response for metric %s: %v", name, resp.StatusCode())
 	}
 
 	return nil
@@ -113,14 +118,16 @@ func (ms *MetricService) sendGaugeMetric(name string, value float64) error {
 
 func (ms *MetricService) sendCounterMetric(name string, value int64) error {
 	url := fmt.Sprintf("http://localhost:8080/update/counter/%s/%v", name, value)
-	resp, err := http.Post(url, "text/plain", nil)
+	resp, err := ms.Client.R().
+		SetHeader("Content-Type", "text/plain").
+		Post(url)
+
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("bad response for metric %s: %s", name, resp.Status)
+	if resp.StatusCode() != http.StatusOK {
+		return fmt.Errorf("bad response for metric %s: %v", name, resp.StatusCode())
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -11,8 +12,17 @@ type MockLogger struct{}
 func (m MockLogger) Info(msg string)  {}
 func (m MockLogger) Error(msg string) {}
 
+type MockRestClient struct{}
+
+func (mrc *MockRestClient) R() *resty.Request {
+	return resty.New().R().
+		SetDoNotParseResponse(true).
+		SetBody("mock").
+		SetHeader("Content-Type", "text/plain")
+}
+
 func TestAppendMetric(t *testing.T) {
-	ms := NewMetricService(MockLogger{})
+	ms := NewMetricService(MockLogger{}, &MockRestClient{})
 	ms.appendMetric(metric.Alloc, 123.45)
 
 	val, exists := ms.Metrics[metric.Alloc]
@@ -21,7 +31,7 @@ func TestAppendMetric(t *testing.T) {
 }
 
 func TestAggregateMetric(t *testing.T) {
-	ms := NewMetricService(MockLogger{})
+	ms := NewMetricService(MockLogger{}, &MockRestClient{})
 	ms.aggregateMetric(metric.PollCount, 5)
 	ms.aggregateMetric(metric.PollCount, 3)
 
@@ -31,7 +41,7 @@ func TestAggregateMetric(t *testing.T) {
 }
 
 func TestCollectMetrics(t *testing.T) {
-	ms := NewMetricService(MockLogger{})
+	ms := NewMetricService(MockLogger{}, &MockRestClient{})
 	ms.CollectMetrics()
 
 	_, exists := ms.Metrics[metric.Alloc]
