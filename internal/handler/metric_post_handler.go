@@ -23,12 +23,12 @@ func NewMetricPostHandler(storage repository.Storager, log logging.Logger) *Metr
 func (h *MetricPostHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	h.Log.Info(fmt.Sprintf("Handle request %v", request.RequestURI))
 
-	contentType := request.Header.Get("Content-Type")
-	if contentType != "text/plain" {
-		h.Log.Error(fmt.Sprintf("Content-Type must be text/plain. Content-Type of request is %v", contentType))
-		http.Error(response, "Content-Type must be text/plain", http.StatusBadRequest)
-		return
-	}
+	//contentType := request.Header.Get("Content-Type")
+	//if contentType != "text/plain" {
+	//	h.Log.Error(fmt.Sprintf("Content-Type must be text/plain. Content-Type of request is %v", contentType))
+	//	http.Error(response, "Content-Type must be text/plain", http.StatusBadRequest)
+	//	return
+	//}
 
 	metricType := request.PathValue("type")
 	switch metricType {
