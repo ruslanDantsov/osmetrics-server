@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
 	"github.com/ruslanDantsov/osmetrics-server/internal/repository"
@@ -21,28 +22,28 @@ func NewMetricGetHandler(storage repository.Storager, log logging.Logger) *Metri
 	}
 }
 
-func (h *MetricGetHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	h.Log.Info(fmt.Sprintf("Handle request %v", request.RequestURI))
+func (h *MetricGetHandler) ServeHTTP(ginContext *gin.Context) {
+	h.Log.Info(fmt.Sprintf("Handle request %v", ginContext.Request.RequestURI))
 
-	metricType := request.PathValue("type")
+	metricType := ginContext.Param("type")
 	switch metricType {
 	case "gauge":
-		h.handleGetGaugeMetric(response, request)
+		h.handleGetGaugeMetric(ginContext)
 	case "counter":
-		h.handleGetCounterMetric(response, request)
+		h.handleGetCounterMetric(ginContext)
 	default:
 		h.Log.Error(fmt.Sprintf("Metric type=%v is unsupported", metricType))
-		http.Error(response, "Metric type is unsupported", http.StatusBadRequest)
+		ginContext.String(http.StatusBadRequest, "Metric type is unsupported")
 	}
 }
 
-func (h *MetricGetHandler) handleGetCounterMetric(response http.ResponseWriter, request *http.Request) {
-	rawMetricName := request.PathValue("name")
+func (h *MetricGetHandler) handleGetCounterMetric(ginContext *gin.Context) {
+	rawMetricName := ginContext.Param("name")
 
 	metricName, err := metric.ParseMetricName(rawMetricName)
 	if err != nil {
 		h.Log.Error(err.Error())
-		http.Error(response, "Unsupported metric type", http.StatusNotFound)
+		ginContext.String(http.StatusNotFound, "Metric name is unsupported")
 		return
 	}
 
@@ -50,28 +51,21 @@ func (h *MetricGetHandler) handleGetCounterMetric(response http.ResponseWriter, 
 
 	if !found {
 		h.Log.Error(fmt.Sprintf("The counter_metric name=%v not found", metricName))
-		http.Error(response, "Metric not found", http.StatusNotFound)
+		ginContext.String(http.StatusNotFound, "Metric not found")
 		return
 	}
 
-	response.Header().Set("Content-Type", "text/plain")
-	response.WriteHeader(http.StatusOK)
-
-	if _, formatErr := fmt.Fprint(response, strconv.FormatInt(counterModel.Value, 10)); formatErr != nil {
-		h.Log.Error(formatErr.Error())
-		http.Error(response, formatErr.Error(), http.StatusInternalServerError)
-		return
-	}
-
+	ginContext.Header("Content-Type", "text/html")
+	ginContext.String(http.StatusOK, strconv.FormatInt(counterModel.Value, 10))
 }
 
-func (h *MetricGetHandler) handleGetGaugeMetric(response http.ResponseWriter, request *http.Request) {
-	rawMetricName := request.PathValue("name")
+func (h *MetricGetHandler) handleGetGaugeMetric(ginContext *gin.Context) {
+	rawMetricName := ginContext.Param("name")
 
 	metricName, err := metric.ParseMetricName(rawMetricName)
 	if err != nil {
 		h.Log.Error(err.Error())
-		http.Error(response, "Unsupported metric type", http.StatusNotFound)
+		ginContext.String(http.StatusNotFound, "Metric name is unsupported")
 		return
 	}
 
@@ -79,16 +73,10 @@ func (h *MetricGetHandler) handleGetGaugeMetric(response http.ResponseWriter, re
 
 	if !found {
 		h.Log.Error(fmt.Sprintf("The gauge_metric name=%v not found", metricName))
-		http.Error(response, "Metric not found", http.StatusNotFound)
+		ginContext.String(http.StatusNotFound, "Metric not found")
 		return
 	}
 
-	response.Header().Set("Content-Type", "text/plain")
-	response.WriteHeader(http.StatusOK)
-
-	if _, formatErr := fmt.Fprint(response, strconv.FormatFloat(gaugeModel.Value, 'f', -1, 64)); formatErr != nil {
-		h.Log.Error(formatErr.Error())
-		http.Error(response, formatErr.Error(), http.StatusInternalServerError)
-		return
-	}
+	ginContext.Header("Content-Type", "text/html")
+	ginContext.String(http.StatusOK, strconv.FormatFloat(gaugeModel.Value, 'f', -1, 64))
 }

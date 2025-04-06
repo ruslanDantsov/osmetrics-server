@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
 	"net/http"
 )
@@ -16,7 +17,9 @@ func NewCommonHandler(log logging.Logger) *CommonHandler {
 	}
 }
 
-func (h *CommonHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	h.Log.Error(fmt.Sprintf("Request is unsupported: url: %v; method: %v", request.RequestURI, request.Method))
-	http.Error(response, "Request is unsupported", http.StatusNotFound)
+func (h *CommonHandler) ServeHTTP(ginContext *gin.Context) {
+	h.Log.Error(fmt.Sprintf("Request is unsupported: url: %v; method: %v",
+		ginContext.Request.RequestURI,
+		ginContext.Request.Method))
+	ginContext.String(http.StatusNotFound, "Request is unsupported")
 }

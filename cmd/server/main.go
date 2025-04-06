@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/ruslanDantsov/osmetrics-server/internal/handler"
 	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
 	"github.com/ruslanDantsov/osmetrics-server/internal/repository"
@@ -24,13 +25,13 @@ func startServer(commonHandler *handler.CommonHandler,
 	metricGetHandler *handler.MetricGetHandler,
 	metricListHandler *handler.MetricListHandler) {
 
-	mux := http.NewServeMux()
-	mux.HandleFunc(`/`, metricListHandler.ServeHTTP)
-	mux.HandleFunc("GET /value/{type}/{name}", metricGetHandler.ServeHTTP)
-	mux.HandleFunc("POST /update/{type}/{name}/{value}", metricPostHandler.ServeHTTP)
-	mux.HandleFunc(`/{path}/`, commonHandler.ServeHTTP)
+	router := gin.Default()
+	router.GET(`/`, metricListHandler.ServeHTTP)
+	router.GET("/value/:type/:name", metricGetHandler.ServeHTTP)
+	router.POST("/update/:type/:name/:value", metricPostHandler.ServeHTTP)
+	router.Any(`/:path/`, commonHandler.ServeHTTP)
 
-	err := http.ListenAndServe(`localhost:8080`, mux)
+	err := http.ListenAndServe(`localhost:8080`, router)
 	if err != nil {
 		panic(err)
 	}

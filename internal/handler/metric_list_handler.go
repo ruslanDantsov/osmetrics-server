@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
 	"github.com/ruslanDantsov/osmetrics-server/internal/repository"
 	"net/http"
@@ -19,8 +20,8 @@ func NewMetricListHandler(storage repository.Storager, log logging.Logger) *Metr
 	}
 }
 
-func (h *MetricListHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	h.Log.Info(fmt.Sprintf("Handle request %v", request.RequestURI))
+func (h *MetricListHandler) ServeHTTP(c *gin.Context) {
+	h.Log.Info(fmt.Sprintf("Handle request %v", c.Request.RequestURI))
 	var metricNames = h.Storage.GetKnownMetrics()
 	htmlContent := "<html><head><title>Список метрик</title></head><body>"
 	htmlContent += "<h1>List of known metrics:</h1>"
@@ -33,7 +34,7 @@ func (h *MetricListHandler) ServeHTTP(response http.ResponseWriter, request *htt
 	htmlContent += "</ul>"
 	htmlContent += "</body></html>"
 
-	response.Header().Set("Content-Type", "text/html")
-	response.WriteHeader(http.StatusOK)
-	response.Write([]byte(htmlContent))
+	c.Header("Content-Type", "text/html")
+	c.Status(http.StatusOK)
+	c.Writer.Write([]byte(htmlContent))
 }
