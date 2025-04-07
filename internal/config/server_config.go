@@ -11,15 +11,16 @@ type ServerConfig struct {
 }
 
 func NewServerConfig() *ServerConfig {
-	addr := flag.String("a", "localhost:8080", "Address of the HTTP server")
+	flagAddress := flag.String("a", "localhost:8080", "Address of the HTTP server")
 	flag.Parse()
 
 	if len(flag.Args()) > 0 {
 		fmt.Fprintf(os.Stderr, "Error: unknown flags detected: %v\n", flag.Args())
 		os.Exit(1)
 	}
+	address := getEnvOrDefault("ADDRESS", *flagAddress)
 
 	return &ServerConfig{
-		Address: *addr,
+		Address: address,
 	}
 }
