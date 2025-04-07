@@ -2,6 +2,8 @@ package config
 
 import (
 	"flag"
+	"fmt"
+	"os"
 	"time"
 )
 
@@ -17,6 +19,11 @@ func NewAgentConfig() *AgentConfig {
 	pollInterval := flag.Int("p", 2, "Frequency (in seconds) for polling metrics from runtime")
 
 	flag.Parse()
+
+	if len(flag.Args()) > 0 {
+		fmt.Fprintf(os.Stderr, "Error: unknown flags detected: %v\n", flag.Args())
+		os.Exit(1)
+	}
 
 	return &AgentConfig{
 		Address:        *addr,

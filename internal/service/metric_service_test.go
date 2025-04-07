@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/go-resty/resty/v2"
+	"github.com/ruslanDantsov/osmetrics-server/internal/config"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -14,6 +15,16 @@ func (m MockLogger) Error(msg string) {}
 
 type MockRestClient struct{}
 
+type MockConfig struct{}
+
+func NewMockAgentConfig() *config.AgentConfig {
+	return &config.AgentConfig{
+		Address:        "localhost:8080", // Replace with actual default or test values
+		ReportInterval: 10,               // Example default
+		PollInterval:   2,                // Example default
+	}
+}
+
 func (mrc *MockRestClient) R() *resty.Request {
 	return resty.New().R().
 		SetDoNotParseResponse(true).
@@ -22,7 +33,7 @@ func (mrc *MockRestClient) R() *resty.Request {
 }
 
 func TestAppendMetric(t *testing.T) {
-	ms := NewMetricService(MockLogger{}, &MockRestClient{})
+	ms := NewMetricService(MockLogger{}, &MockRestClient{}, NewMockAgentConfig())
 	ms.appendMetric(metric.Alloc, 123.45)
 
 	val, exists := ms.Metrics[metric.Alloc]
@@ -31,7 +42,7 @@ func TestAppendMetric(t *testing.T) {
 }
 
 func TestAggregateMetric(t *testing.T) {
-	ms := NewMetricService(MockLogger{}, &MockRestClient{})
+	ms := NewMetricService(MockLogger{}, &MockRestClient{}, NewMockAgentConfig())
 	ms.aggregateMetric(metric.PollCount, 5)
 	ms.aggregateMetric(metric.PollCount, 3)
 
@@ -41,7 +52,7 @@ func TestAggregateMetric(t *testing.T) {
 }
 
 func TestCollectMetrics(t *testing.T) {
-	ms := NewMetricService(MockLogger{}, &MockRestClient{})
+	ms := NewMetricService(MockLogger{}, &MockRestClient{}, NewMockAgentConfig())
 	ms.CollectMetrics()
 
 	_, exists := ms.Metrics[metric.Alloc]
