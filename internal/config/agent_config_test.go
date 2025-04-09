@@ -6,22 +6,22 @@ import (
 	"testing"
 )
 
-func TestServerConfig_FromEnv(t *testing.T) {
+func TestAgentConfig_FromEnv(t *testing.T) {
 	expectedAddress := "localhost:1234"
 
 	os.Setenv("ADDRESS", expectedAddress)
 	defer os.Unsetenv("ADDRESS")
 
-	config := NewServerConfig([]string{})
+	config := NewAgentConfig([]string{})
 
 	assert.Equal(t, expectedAddress, config.Address)
 
 }
 
-func TestServerConfig_FromDefaultValue(t *testing.T) {
+func TestAgentConfig_FromDefaultValue(t *testing.T) {
 	expectedAddress := "localhost:8080"
 
-	config := NewServerConfig([]string{})
+	config := NewAgentConfig([]string{})
 
 	assert.Equal(t, expectedAddress, config.Address)
 

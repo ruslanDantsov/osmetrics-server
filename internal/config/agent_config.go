@@ -1,10 +1,7 @@
 package config
 
 import (
-	"flag"
-	"fmt"
-	"os"
-	"strconv"
+	"github.com/alecthomas/kingpin/v2"
 	"time"
 )
 
@@ -14,41 +11,32 @@ type AgentConfig struct {
 	PollInterval   time.Duration
 }
 
-func NewAgentConfig() *AgentConfig {
-	flagAddress := flag.String("a", "localhost:8080", "Address of the HTTP server")
-	flagReportInterval := flag.Int("r", 10, "Frequency (in seconds) for sending reports to the server")
-	flagPollInterval := flag.Int("p", 2, "Frequency (in seconds) for polling metrics from runtime")
+func NewAgentConfig(cliArgs []string) *AgentConfig {
+	config := AgentConfig{}
+	app := kingpin.New("agentApp", "Agent application")
 
-	flag.Parse()
+	app.
+		Flag("a", "Address of the HTTP server").
+		Envar("ADDRESS").
+		Default("localhost:8080").
+		StringVar(&config.Address)
 
-	if len(flag.Args()) > 0 {
-		fmt.Fprintf(os.Stderr, "Error: unknown flags detected: %v\n", flag.Args())
-		os.Exit(1)
+	app.
+		Flag("r", "Frequency (in seconds) for sending reports to the server").
+		Envar("REPORT_INTERVAL").
+		Default("10s").
+		DurationVar(&config.ReportInterval)
+
+	app.
+		Flag("p", "Frequency (in seconds) for polling metrics from runtime").
+		Envar("POLL_INTERVAL").
+		Default("2s").
+		DurationVar(&config.ReportInterval)
+
+	_, err := app.Parse(cliArgs)
+	if err != nil {
+		panic(err)
 	}
 
-	address := getEnvOrDefault("ADDRESS", *flagAddress)
-	reportInterval := getEnvTimeOrDefault("REPORT_INTERVAL", time.Duration(*flagReportInterval)*time.Second)
-	pollInterval := getEnvTimeOrDefault("POLL_INTERVAL", time.Duration(*flagPollInterval)*time.Second)
-
-	return &AgentConfig{
-		Address:        address,
-		ReportInterval: reportInterval,
-		PollInterval:   pollInterval,
-	}
-}
-
-func getEnvOrDefault(key string, defaultVal string) string {
-	if val, ok := os.LookupEnv(key); ok {
-		return val
-	}
-	return defaultVal
-}
-
-func getEnvTimeOrDefault(key string, defaultVal time.Duration) time.Duration {
-	if valStr, ok := os.LookupEnv(key); ok {
-		if val, err := strconv.Atoi(valStr); err == nil {
-			return time.Duration(val) * time.Second
-		}
-	}
-	return defaultVal
+	return &config
 }
