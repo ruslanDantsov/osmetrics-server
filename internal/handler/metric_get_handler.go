@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/ruslanDantsov/osmetrics-server/internal/constants/server"
 	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
 	"github.com/ruslanDantsov/osmetrics-server/internal/repository"
@@ -25,7 +26,7 @@ func NewMetricGetHandler(storage repository.Storager, log logging.Logger) *Metri
 func (h *MetricGetHandler) ServeHTTP(ginContext *gin.Context) {
 	h.Log.Info(fmt.Sprintf("Handle request %v", ginContext.Request.RequestURI))
 
-	metricType := ginContext.Param("type")
+	metricType := ginContext.Param(server.URLParamMetricType)
 	switch metricType {
 	case "gauge":
 		h.handleGetGaugeMetric(ginContext)
@@ -38,7 +39,7 @@ func (h *MetricGetHandler) ServeHTTP(ginContext *gin.Context) {
 }
 
 func (h *MetricGetHandler) handleGetCounterMetric(ginContext *gin.Context) {
-	rawMetricName := ginContext.Param("name")
+	rawMetricName := ginContext.Param(server.URLParamMetricName)
 
 	metricName, err := metric.ParseMetricName(rawMetricName)
 	if err != nil {
@@ -60,7 +61,7 @@ func (h *MetricGetHandler) handleGetCounterMetric(ginContext *gin.Context) {
 }
 
 func (h *MetricGetHandler) handleGetGaugeMetric(ginContext *gin.Context) {
-	rawMetricName := ginContext.Param("name")
+	rawMetricName := ginContext.Param(server.URLParamMetricName)
 
 	metricName, err := metric.ParseMetricName(rawMetricName)
 	if err != nil {

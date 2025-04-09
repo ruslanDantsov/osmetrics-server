@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/ruslanDantsov/osmetrics-server/internal/constants/server"
 	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model"
 	"github.com/ruslanDantsov/osmetrics-server/internal/repository"
@@ -24,7 +25,7 @@ func NewMetricPostHandler(storage repository.Storager, log logging.Logger) *Metr
 func (h *MetricPostHandler) ServeHTTP(ginContext *gin.Context) {
 	h.Log.Info(fmt.Sprintf("Handle request %v", ginContext.Request.RequestURI))
 
-	metricType := ginContext.Param("type")
+	metricType := ginContext.Param(server.URLParamMetricType)
 	switch metricType {
 	case "gauge":
 		h.handlePostGaugeMetric(ginContext)
@@ -38,8 +39,8 @@ func (h *MetricPostHandler) ServeHTTP(ginContext *gin.Context) {
 }
 
 func (h *MetricPostHandler) handlePostCounterMetric(ginContext *gin.Context) {
-	metricName := ginContext.Param("name")
-	metricValue := ginContext.Param("value")
+	metricName := ginContext.Param(server.URLParamMetricName)
+	metricValue := ginContext.Param(server.URLParamMetricValue)
 
 	counterModel, err := model.NewCounterMetricModelWithRawValues(metricName, metricValue)
 	if err != nil {
@@ -59,8 +60,8 @@ func (h *MetricPostHandler) handlePostCounterMetric(ginContext *gin.Context) {
 }
 
 func (h *MetricPostHandler) handlePostGaugeMetric(ginContext *gin.Context) {
-	metricName := ginContext.Param("name")
-	metricValue := ginContext.Param("value")
+	metricName := ginContext.Param(server.URLParamMetricName)
+	metricValue := ginContext.Param(server.URLParamMetricValue)
 
 	gaugeModel, err := model.NewGaugeMetricModelWithRawValues(metricName, metricValue)
 	if err != nil {
