@@ -1,26 +1,26 @@
 package config
 
 import (
-	"flag"
-	"fmt"
-	"os"
+	"github.com/alecthomas/kingpin/v2"
 )
 
 type ServerConfig struct {
 	Address string
 }
 
-func NewServerConfig() *ServerConfig {
-	flagAddress := flag.String("a", "localhost:8080", "Address of the HTTP server")
-	flag.Parse()
+func NewServerConfig(cliArgs []string) *ServerConfig {
+	config := ServerConfig{}
+	app := kingpin.New("serverApp", "Server application")
+	app.
+		Flag("host", "Server host address").
+		Envar("ADDRESS").
+		Default("localhost:8080").
+		StringVar(&config.Address)
 
-	if len(flag.Args()) > 0 {
-		fmt.Fprintf(os.Stderr, "Error: unknown flags detected: %v\n", flag.Args())
-		os.Exit(1)
+	_, err := app.Parse(cliArgs)
+	if err != nil {
+		panic(err)
 	}
-	address := getEnvOrDefault("ADDRESS", *flagAddress)
 
-	return &ServerConfig{
-		Address: address,
-	}
+	return &config
 }

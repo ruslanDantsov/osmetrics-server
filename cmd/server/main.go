@@ -7,17 +7,17 @@ import (
 	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
 	"github.com/ruslanDantsov/osmetrics-server/internal/repository"
 	"net/http"
+	"os"
 )
 
 func main() {
-	//TODO: move to config
 	log := logging.NewStdoutLogger()
 	storage := repository.NewMemStorage(log)
 	metricGetHandler := handler.NewMetricGetHandler(storage, log)
 	metricPostHandler := handler.NewMetricPostHandler(storage, log)
 	commonHandler := handler.NewCommonHandler(log)
 	metricListHandler := handler.NewMetricListHandler(storage, log)
-	serverConfig := config.NewServerConfig()
+	serverConfig := config.NewServerConfig(os.Args[1:])
 
 	startServer(commonHandler, metricPostHandler, metricGetHandler, metricListHandler, serverConfig)
 }
