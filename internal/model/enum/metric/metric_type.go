@@ -137,35 +137,11 @@ var (
 	}
 )
 
-// var metricNames = []Metric{
-// Alloc,
-// BuckHashSys,
-// Frees,
-// GCCPUFraction,
-// }
-//
-// var metricNameMap = func() map[string]Metric {
-// m := make(map[string]Metric)
-// for _, mt := range metricNames {
-// m[string(mt)] = mt
-// }
-// return m
-// }()
 func (m Metric) String() string {
 	return m.Name
 }
 
-//
-//func ListMetricNames() []Metric {
-//return metricNames
-//}
-
 func ParseMetricName(s string) (Metric, error) {
-	//TODO: uncomment in  iter2
-	//if mt, exists := metricNameMap[s]; exists {
-	//	return mt, nil
-	//}
-	//return "", fmt.Errorf("invalid Metric: %s", s)
 	if strings.TrimSpace(s) == "" {
 		return Metric{}, fmt.Errorf("invalid Metric: %s", s)
 	}

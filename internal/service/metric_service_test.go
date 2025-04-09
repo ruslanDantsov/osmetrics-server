@@ -19,9 +19,9 @@ type MockConfig struct{}
 
 func NewMockAgentConfig() *config.AgentConfig {
 	return &config.AgentConfig{
-		Address:        "localhost:8080", // Replace with actual default or test values
-		ReportInterval: 10,               // Example default
-		PollInterval:   2,                // Example default
+		Address:        "localhost:8080",
+		ReportInterval: 10,
+		PollInterval:   2,
 	}
 }
 
