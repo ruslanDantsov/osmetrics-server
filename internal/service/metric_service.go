@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	"github.com/ruslanDantsov/osmetrics-server/internal/client"
+	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
 	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
@@ -12,15 +12,19 @@ import (
 	"sync"
 )
 
+type RestClient interface {
+	R() *resty.Request
+}
+
 type MetricService struct {
 	mu      sync.Mutex
 	Log     logging.Logger
-	Client  client.RestClient
+	Client  RestClient
 	config  *config.AgentConfig
 	Metrics map[metric.Metric]interface{}
 }
 
-func NewMetricService(log logging.Logger, client client.RestClient, agentConfig *config.AgentConfig) *MetricService {
+func NewMetricService(log logging.Logger, client RestClient, agentConfig *config.AgentConfig) *MetricService {
 	return &MetricService{
 		Log:     log,
 		Client:  client,
