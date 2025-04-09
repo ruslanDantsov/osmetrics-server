@@ -8,8 +8,6 @@ import (
 	"sync"
 )
 
-//TODO: split logic for repository and service layers
-
 type Storager interface {
 	SaveGaugeMetric(model *model.GaugeMetricModel) (*model.GaugeMetricModel, error)
 	GetGaugeMetric(metricType metric.Metric) (*model.GaugeMetricModel, bool)
