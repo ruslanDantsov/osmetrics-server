@@ -31,7 +31,7 @@ func NewAgentConfig(cliArgs []string) *AgentConfig {
 		Flag("p", "Frequency (in seconds) for polling metrics from runtime").
 		Envar("POLL_INTERVAL").
 		Default("2s").
-		DurationVar(&config.ReportInterval)
+		DurationVar(&config.PollInterval)
 
 	_, err := app.Parse(cliArgs)
 	if err != nil {
