@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestAgentConfig_FromEnv(t *testing.T) {
@@ -28,10 +29,10 @@ func TestAgentConfig_FromDefaultValue(t *testing.T) {
 }
 
 func TestAgentConfig_FromCommandLineArg(t *testing.T) {
-	expectedAddress := "localhost:1234"
+	expectedReportInterval := 20 * time.Second
 
-	config := NewAgentConfig([]string{"-a", "localhost:1234"})
+	config := NewAgentConfig([]string{"-r", "20"})
 
-	assert.Equal(t, expectedAddress, config.Address)
+	assert.Equal(t, expectedReportInterval, config.ReportInterval)
 
 }
