@@ -21,7 +21,7 @@ func main() {
 
 	go func() {
 		defer wg.Done()
-		ticker := time.NewTicker(agentConfig.ReportInterval)
+		ticker := time.NewTicker(agentConfig.PollInterval)
 		defer ticker.Stop()
 
 		for range ticker.C {
