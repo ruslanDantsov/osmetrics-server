@@ -34,6 +34,7 @@ func NewMetricService(log logging.Logger, client RestClient, agentConfig *config
 }
 
 func (ms *MetricService) CollectMetrics() {
+	ms.Log.Info("Start process for collecting metrics")
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
@@ -84,8 +85,7 @@ func (ms *MetricService) aggregateMetric(metricType metric.Metric, value int64) 
 }
 
 func (ms *MetricService) SendMetrics() {
-	ms.mu.Lock()
-	defer ms.mu.Unlock()
+	ms.Log.Info("Start process for sending metrics")
 
 	for metricType, value := range ms.Metrics {
 		switch metricType.Type {

@@ -30,6 +30,6 @@ func NewAgentConfig(cliArgs []string) *AgentConfig {
 	config.ReportInterval = time.Duration(config.ReportIntervalInSeconds) * time.Second
 	config.PollInterval = time.Duration(config.PollIntervalInSeconds) * time.Second
 
-	fmt.Println("The data for the server has been loaded")
+	fmt.Println("The data for the agent has been loaded")
 	return config
 }
