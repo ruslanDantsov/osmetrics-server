@@ -1,27 +1,25 @@
 package config
 
 import (
-	"github.com/alecthomas/kingpin/v2"
+	"fmt"
+	"github.com/jessevdk/go-flags"
+	"os"
 )
 
 type ServerConfig struct {
-	Address string
+	Address string `short:"a" long:"address" env:"ADDRESS" default:"localhost:8080" description:"Server host address"`
 }
 
 func NewServerConfig(cliArgs []string) *ServerConfig {
-	config := ServerConfig{}
-	app := kingpin.New("serverApp", "Server application")
-	app.
-		Flag("a", "Server host address").
-		Short('a').
-		Envar("ADDRESS").
-		Default("localhost:8080").
-		StringVar(&config.Address)
+	config := &ServerConfig{}
+	parser := flags.NewParser(config, flags.Default)
 
-	_, err := app.Parse(cliArgs)
+	_, err := parser.ParseArgs(cliArgs)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
-	return &config
+	fmt.Printf("Server host: %v\n", config.Address)
+	return config
 }

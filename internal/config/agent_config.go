@@ -1,51 +1,33 @@
 package config
 
 import (
-	"github.com/alecthomas/kingpin/v2"
+	"fmt"
+	"github.com/jessevdk/go-flags"
+	"os"
 	"time"
 )
 
 type AgentConfig struct {
-	Address        string
-	ReportInterval time.Duration
-	PollInterval   time.Duration
+	Address                 string        `long:"address" short:"a" env:"ADDRESS" default:"localhost:8080" description:"Address of the HTTP server"`
+	ReportIntervalInSeconds int           `long:"report" short:"r" env:"REPORT_INTERVAL" default:"10" description:"Frequency (in seconds) for sending reports to the server"`
+	PollIntervalInSeconds   int           `long:"poll" short:"p" env:"POLL_INTERVAL" default:"2" description:"Frequency (in seconds) for polling metrics from runtime"`
+	ReportInterval          time.Duration `long:"-" description:"Derived duration from ReportIntervalInSeconds"`
+	PollInterval            time.Duration `no:"-" description:"Derived duration from PollSeconds"`
 }
 
 func NewAgentConfig(cliArgs []string) *AgentConfig {
-	config := AgentConfig{}
-	app := kingpin.New("agentApp", "Agent application")
+	config := &AgentConfig{}
+	parser := flags.NewParser(config, flags.Default)
 
-	var pollIntervalSeconds int
-	var reportIntervalSeconds int
-
-	app.
-		Flag("a", "Address of the HTTP server").
-		Short('a').
-		Envar("ADDRESS").
-		Default("localhost:8080").
-		StringVar(&config.Address)
-
-	app.
-		Flag("r", "Frequency (in seconds) for sending reports to the server").
-		Short('r').
-		Envar("REPORT_INTERVAL").
-		Default("10").
-		IntVar(&reportIntervalSeconds)
-
-	app.
-		Flag("p", "Frequency (in seconds) for polling metrics from runtime").
-		Short('p').
-		Envar("POLL_INTERVAL").
-		Default("2").
-		IntVar(&pollIntervalSeconds)
-
-	_, err := app.Parse(cliArgs)
+	_, err := parser.ParseArgs(cliArgs)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
-	config.ReportInterval = time.Duration(reportIntervalSeconds) * time.Second
-	config.PollInterval = time.Duration(pollIntervalSeconds) * time.Second
+	// Convert seconds to durations
+	config.ReportInterval = time.Duration(config.ReportIntervalInSeconds) * time.Second
+	config.PollInterval = time.Duration(config.PollIntervalInSeconds) * time.Second
 
-	return &config
+	return config
 }
