@@ -11,6 +11,8 @@ type ServerConfig struct {
 }
 
 func NewServerConfig(cliArgs []string) *ServerConfig {
+	fmt.Println("Start getting data for server config")
+
 	config := &ServerConfig{}
 	parser := flags.NewParser(config, flags.Default)
 
@@ -20,6 +22,6 @@ func NewServerConfig(cliArgs []string) *ServerConfig {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Server host: %v\n", config.Address)
+	fmt.Println("The data for the server has been loaded")
 	return config
 }
