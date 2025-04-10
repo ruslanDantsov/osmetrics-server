@@ -13,6 +13,7 @@ func NewServerConfig(cliArgs []string) *ServerConfig {
 	app := kingpin.New("serverApp", "Server application")
 	app.
 		Flag("a", "Server host address").
+		Short('a').
 		Envar("ADDRESS").
 		Default("localhost:8080").
 		StringVar(&config.Address)

@@ -26,3 +26,12 @@ func TestAgentConfig_FromDefaultValue(t *testing.T) {
 	assert.Equal(t, expectedAddress, config.Address)
 
 }
+
+func TestAgentConfig_FromCommandLineArg(t *testing.T) {
+	expectedAddress := "localhost:1234"
+
+	config := NewAgentConfig([]string{"-a", "localhost:1234"})
+
+	assert.Equal(t, expectedAddress, config.Address)
+
+}
