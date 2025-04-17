@@ -3,15 +3,15 @@ package handler
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
+	"go.uber.org/zap"
 	"net/http"
 )
 
 type CommonHandler struct {
-	Log logging.Logger
+	Log zap.Logger
 }
 
-func NewCommonHandler(log logging.Logger) *CommonHandler {
+func NewCommonHandler(log zap.Logger) *CommonHandler {
 	return &CommonHandler{
 		Log: log,
 	}

@@ -2,9 +2,9 @@ package repository
 
 import (
 	"fmt"
-	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
+	"go.uber.org/zap"
 	"sync"
 )
 
@@ -19,10 +19,10 @@ type Storager interface {
 type MemStorage struct {
 	mu      sync.RWMutex
 	Storage map[string]interface{}
-	Log     logging.Logger
+	Log     zap.Logger
 }
 
-func NewMemStorage(log logging.Logger) *MemStorage {
+func NewMemStorage(log zap.Logger) *MemStorage {
 	return &MemStorage{
 		Storage: make(map[string]interface{}),
 		Log:     log,

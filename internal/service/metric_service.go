@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
-	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
+	"github.com/ruslanDantsov/osmetrics-server/internal/logger"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
 	"math/rand"
 	"net/http"
@@ -18,13 +18,13 @@ type RestClient interface {
 
 type MetricService struct {
 	mu      sync.Mutex
-	Log     logging.Logger
+	Log     logger.Logger
 	Client  RestClient
 	config  *config.AgentConfig
 	Metrics map[metric.Metric]interface{}
 }
 
-func NewMetricService(log logging.Logger, client RestClient, agentConfig *config.AgentConfig) *MetricService {
+func NewMetricService(log logger.Logger, client RestClient, agentConfig *config.AgentConfig) *MetricService {
 	return &MetricService{
 		Log:     log,
 		Client:  client,
