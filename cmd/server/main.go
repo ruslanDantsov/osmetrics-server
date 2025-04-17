@@ -1,41 +1,30 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
+	"fmt"
+	"github.com/ruslanDantsov/osmetrics-server/internal/app"
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
-	"github.com/ruslanDantsov/osmetrics-server/internal/handler"
-	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
-	"github.com/ruslanDantsov/osmetrics-server/internal/repository"
-	"net/http"
+	"github.com/ruslanDantsov/osmetrics-server/internal/logger"
 	"os"
 )
 
 func main() {
-	log := logging.NewStdoutLogger()
-	storage := repository.NewMemStorage(log)
-	metricGetHandler := handler.NewMetricGetHandler(storage, log)
-	metricPostHandler := handler.NewMetricPostHandler(storage, log)
-	commonHandler := handler.NewCommonHandler(log)
-	metricListHandler := handler.NewMetricListHandler(storage, log)
 	serverConfig := config.NewServerConfig(os.Args[1:])
 
-	startServer(commonHandler, metricPostHandler, metricGetHandler, metricListHandler, serverConfig)
-}
+	if err := logger.Initialized(serverConfig.LogLevel); err != nil {
+		logger.Log.Fatal(fmt.Sprintf("Logger initialized failed: %v", err.Error()))
+	}
 
-func startServer(commonHandler *handler.CommonHandler,
-	metricPostHandler *handler.MetricPostHandler,
-	metricGetHandler *handler.MetricGetHandler,
-	metricListHandler *handler.MetricListHandler,
-	serverConfig *config.ServerConfig) {
+	defer logger.Log.Sync()
 
-	router := gin.Default()
-	router.GET(`/`, metricListHandler.ServeHTTP)
-	router.GET("/value/:type/:name", metricGetHandler.ServeHTTP)
-	router.POST("/update/:type/:name/:value", metricPostHandler.ServeHTTP)
-	router.Any(`/:path/`, commonHandler.ServeHTTP)
+	logger.Log.Info("Starting server...")
 
-	err := http.ListenAndServe(serverConfig.Address, router)
-	if err != nil {
-		panic(err)
+	serverApp := app.NewServerApp(serverConfig, logger.Log)
+	if err := serverApp.Run(); err != nil {
+		logger.Log.Fatal(fmt.Sprintf("Server initialized failed: %v", err.Error()))
+	}
+
+	if err := serverApp.Run(); err != nil {
+		logger.Log.Fatal(fmt.Sprintf("Server start failed: %v", err.Error()))
 	}
 }

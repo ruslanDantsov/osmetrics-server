@@ -7,12 +7,11 @@ import (
 )
 
 type ServerConfig struct {
-	Address string `short:"a" long:"address" env:"ADDRESS" default:"localhost:8080" description:"Server host address"`
+	Address  string `short:"a" long:"address" env:"ADDRESS" default:"localhost:8080" description:"Server host address"`
+	LogLevel string `short:"l" long:"log" env:"LOG_LEVEL" default:"INFO" description:"Log Level"`
 }
 
 func NewServerConfig(cliArgs []string) *ServerConfig {
-	fmt.Println("Start getting data for server config")
-
 	config := &ServerConfig{}
 	parser := flags.NewParser(config, flags.Default)
 
@@ -22,6 +21,5 @@ func NewServerConfig(cliArgs []string) *ServerConfig {
 		os.Exit(1)
 	}
 
-	fmt.Println("The data for the server has been loaded")
 	return config
 }

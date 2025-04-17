@@ -1,32 +1,30 @@
-package handler
+package metric
 
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/ruslanDantsov/osmetrics-server/internal/constants/server"
-	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
+	"github.com/ruslanDantsov/osmetrics-server/internal/constants"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
 	"github.com/ruslanDantsov/osmetrics-server/internal/repository"
+	"go.uber.org/zap"
 	"net/http"
 	"strconv"
 )
 
-type MetricGetHandler struct {
+type MetricHandler struct {
 	Storage repository.Storager
-	Log     logging.Logger
+	Log     zap.Logger
 }
 
-func NewMetricGetHandler(storage repository.Storager, log logging.Logger) *MetricGetHandler {
-	return &MetricGetHandler{
+func NewMetricHandler(storage repository.Storager, log zap.Logger) *MetricHandler {
+	return &MetricHandler{
 		Storage: storage,
 		Log:     log,
 	}
 }
 
-func (h *MetricGetHandler) ServeHTTP(ginContext *gin.Context) {
-	h.Log.Info(fmt.Sprintf("Handle request %v", ginContext.Request.RequestURI))
-
-	metricType := ginContext.Param(server.URLParamMetricType)
+func (h *MetricHandler) Get(ginContext *gin.Context) {
+	metricType := ginContext.Param(constants.URLParamMetricType)
 	switch metricType {
 	case "gauge":
 		h.handleGetGaugeMetric(ginContext)
@@ -38,8 +36,8 @@ func (h *MetricGetHandler) ServeHTTP(ginContext *gin.Context) {
 	}
 }
 
-func (h *MetricGetHandler) handleGetCounterMetric(ginContext *gin.Context) {
-	rawMetricName := ginContext.Param(server.URLParamMetricName)
+func (h *MetricHandler) handleGetCounterMetric(ginContext *gin.Context) {
+	rawMetricName := ginContext.Param(constants.URLParamMetricName)
 
 	metricName, err := metric.ParseMetricName(rawMetricName)
 	if err != nil {
@@ -60,8 +58,8 @@ func (h *MetricGetHandler) handleGetCounterMetric(ginContext *gin.Context) {
 	ginContext.String(http.StatusOK, strconv.FormatInt(counterModel.Value, 10))
 }
 
-func (h *MetricGetHandler) handleGetGaugeMetric(ginContext *gin.Context) {
-	rawMetricName := ginContext.Param(server.URLParamMetricName)
+func (h *MetricHandler) handleGetGaugeMetric(ginContext *gin.Context) {
+	rawMetricName := ginContext.Param(constants.URLParamMetricName)
 
 	metricName, err := metric.ParseMetricName(rawMetricName)
 	if err != nil {
