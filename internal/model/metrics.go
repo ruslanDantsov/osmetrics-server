@@ -21,7 +21,7 @@ func NewMetricWithRawValues(metricType string, metricIDRaw string, valueRaw stri
 	}
 
 	switch metricType {
-	case "Gauge":
+	case "gauge":
 		floatValue, err := strconv.ParseFloat(valueRaw, 64)
 		if err != nil {
 			return nil, err
@@ -32,7 +32,7 @@ func NewMetricWithRawValues(metricType string, metricIDRaw string, valueRaw stri
 			Value: &floatValue,
 		}, nil
 
-	case "Counter":
+	case "counter":
 		intValue, err := strconv.ParseInt(valueRaw, 10, 64)
 		if err != nil {
 			return nil, err

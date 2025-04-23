@@ -40,11 +40,11 @@ func (s *MemStorage) GetMetric(metricID enum.MetricID) (*model.Metrics, bool) {
 	defer s.mu.RUnlock()
 
 	if val, found := s.Storage[metricID.String()]; found {
-		if val.MType == "Counter" {
+		if val.MType == "counter" {
 			s.Log.Info(fmt.Sprintf("Get metric name=%v type=%v delta=%v", val.ID, val.MType, *val.Delta))
 		}
 
-		if val.MType == "Gauge" {
+		if val.MType == "gauge" {
 			s.Log.Info(fmt.Sprintf("Get metric name=%v type=%v delta=%v", val.ID, val.MType, *val.Value))
 		}
 		return val, true
@@ -60,7 +60,7 @@ func (s *MemStorage) SaveMetric(metric *model.Metrics) (*model.Metrics, error) {
 	key := metric.ID.String()
 	existing, found := s.Storage[key]
 
-	if metric.MType == "Counter" {
+	if metric.MType == "counter" {
 		if found && existing.Delta != nil && metric.Delta != nil {
 			*existing.Delta += *metric.Delta
 			s.Log.Info(fmt.Sprintf("UPDATE counter_metric name=%v delta=%v", metric.ID, *existing.Delta))
@@ -70,11 +70,11 @@ func (s *MemStorage) SaveMetric(metric *model.Metrics) (*model.Metrics, error) {
 
 	s.Storage[key] = metric
 
-	if metric.MType == "Counter" {
+	if metric.MType == "counter" {
 		s.Log.Info(fmt.Sprintf("SAVE %v metric id=%v value=%v", metric.MType, metric.ID, *metric.Delta))
 	}
 
-	if metric.MType == "Gauge" {
+	if metric.MType == "gauge" {
 		s.Log.Info(fmt.Sprintf("SAVE %v metric id=%v value=%v", metric.MType, metric.ID, *metric.Value))
 	}
 

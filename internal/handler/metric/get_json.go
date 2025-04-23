@@ -34,11 +34,11 @@ func (h *MetricHandler) GetJSON(ginContext *gin.Context) {
 
 	_, err := easyjson.MarshalToWriter(existingMetric, ginContext.Writer)
 
-	if existingMetric.MType == "Counter" {
+	if existingMetric.MType == "counter" {
 		h.Log.Debug(fmt.Sprintf("Return: Metric ID=%v Value=%v", existingMetric.ID, existingMetric.Delta))
 	}
 
-	if existingMetric.MType == "Gauge" {
+	if existingMetric.MType == "gauge" {
 		h.Log.Debug(fmt.Sprintf("Return: Metric ID=%v Value=%v", existingMetric.ID, existingMetric.Value))
 	}
 

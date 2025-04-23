@@ -19,9 +19,9 @@ func (h *MetricHandler) Store(ginContext *gin.Context) {
 
 	switch metricType {
 	case "counter":
-		metricRequest, err = model.NewMetricWithRawValues("Counter", metricName, metricValue)
+		metricRequest, err = model.NewMetricWithRawValues("counter", metricName, metricValue)
 	case "gauge":
-		metricRequest, err = model.NewMetricWithRawValues("Gauge", metricName, metricValue)
+		metricRequest, err = model.NewMetricWithRawValues("gauge", metricName, metricValue)
 	default:
 		h.Log.Warn(fmt.Sprintf("Metric type=%v is unsupported", metricType))
 		metricRequest, err = model.NewMetricWithRawValues(metricType, metricName, metricValue)

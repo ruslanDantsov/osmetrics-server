@@ -100,10 +100,10 @@ func (ms *MetricService) sendMetric(ID enum.MetricID, mType string, value interf
 	}
 
 	switch mType {
-	case "Gauge":
+	case "gauge":
 		v := value.(float64)
 		metric.Value = &v
-	case "Counter":
+	case "counter":
 		v := value.(int64)
 		metric.Delta = &v
 	}
@@ -136,9 +136,9 @@ func (ms *MetricService) SendMetrics() {
 		var err error
 		switch value := genericValue.(type) {
 		case float64:
-			err = ms.sendMetric(metricID, "Gauge", value)
+			err = ms.sendMetric(metricID, "gauge", value)
 		case int64:
-			err = ms.sendMetric(metricID, "Counter", value)
+			err = ms.sendMetric(metricID, "counter", value)
 			if err == nil {
 				ms.Metrics[metricID] = int64(0)
 			}
