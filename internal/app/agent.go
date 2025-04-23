@@ -1,10 +1,13 @@
 package app
 
 import (
+	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
 	"github.com/ruslanDantsov/osmetrics-server/internal/service"
 	"go.uber.org/zap"
+	"log"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -30,6 +33,8 @@ func NewAgentApp(cfg *config.AgentConfig, log *zap.Logger) *AgentApp {
 }
 
 func (app *AgentApp) Run() error {
+	app.waitForServer()
+
 	var wg sync.WaitGroup
 	wg.Add(2)
 
@@ -56,4 +61,16 @@ func (app *AgentApp) Run() error {
 	wg.Wait()
 
 	return nil
+}
+
+func (app *AgentApp) waitForServer() {
+	url := fmt.Sprintf("http://%v/health", app.config.Address)
+	for {
+		resp, err := http.Get(url)
+		if err == nil && resp.StatusCode == http.StatusOK {
+			return
+		}
+		log.Println("Server not ready, waiting...")
+		time.Sleep(2 * time.Second)
+	}
 }

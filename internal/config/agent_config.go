@@ -17,7 +17,6 @@ type AgentConfig struct {
 }
 
 func NewAgentConfig(cliArgs []string) *AgentConfig {
-	fmt.Println("Start getting data for agent config")
 	config := &AgentConfig{}
 	parser := flags.NewParser(config, flags.Default)
 
@@ -31,6 +30,5 @@ func NewAgentConfig(cliArgs []string) *AgentConfig {
 	config.ReportInterval = time.Duration(config.ReportIntervalInSeconds) * time.Second
 	config.PollInterval = time.Duration(config.PollIntervalInSeconds) * time.Second
 
-	fmt.Println("The data for the agent has been loaded")
 	return config
 }

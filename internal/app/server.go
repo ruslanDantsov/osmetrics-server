@@ -17,12 +17,14 @@ type ServerApp struct {
 	storage       repository.Storager
 	metricHandler *metric.MetricHandler
 	commonHandler *handler.CommonHandler
+	healthHandler *handler.HealthHandler
 }
 
 func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) *ServerApp {
 	storage := repository.NewMemStorage(*log)
 	metricHandler := metric.NewMetricHandler(storage, *log)
 	commonHandler := handler.NewCommonHandler(*log)
+	healthHandler := handler.NewHealthHandler(*log)
 
 	return &ServerApp{
 		config:        cfg,
@@ -30,6 +32,7 @@ func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) *ServerApp {
 		storage:       storage,
 		metricHandler: metricHandler,
 		commonHandler: commonHandler,
+		healthHandler: healthHandler,
 	}
 }
 
@@ -39,6 +42,7 @@ func (app *ServerApp) Run() error {
 	router.Use(middleware.NewLoggerRequestMiddleware(app.logger))
 
 	router.GET(`/`, app.metricHandler.List)
+	router.GET("/health", app.healthHandler.GetHealth)
 	router.GET("/value/:type/:name", app.metricHandler.Get)
 	router.POST("/value", app.metricHandler.GetJSON)
 	router.POST("/update", app.metricHandler.StoreJSON)

@@ -18,7 +18,7 @@ func (h *MetricHandler) GetJSON(ginContext *gin.Context) {
 	}
 
 	if metricRequest.MType != "Gauge" && metricRequest.MType != "Counter" {
-		h.Log.Warn(fmt.Sprintf("Metric type=%v is unsupported", metricRequest.MType))
+		h.Log.Warn(fmt.Sprintf("Metric ID=%v is unsupported", metricRequest.MType))
 	}
 
 	existingMetric, found := h.Storage.GetMetric(metricRequest.ID)
