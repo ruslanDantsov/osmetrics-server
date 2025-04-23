@@ -19,8 +19,6 @@ func (h *MetricHandler) StoreJSON(ginContext *gin.Context) {
 
 	if metricRequest.MType != "Gauge" && metricRequest.MType != "Counter" {
 		h.Log.Error(fmt.Sprintf("Metric type=%v is unsupported", metricRequest.MType))
-		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Metric type is unsupported", "type": metricRequest.MType})
-		return
 	}
 
 	updatedMetric, err := h.Storage.SaveMetric(&metricRequest)

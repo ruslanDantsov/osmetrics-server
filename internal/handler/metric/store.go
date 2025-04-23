@@ -23,9 +23,8 @@ func (h *MetricHandler) Store(ginContext *gin.Context) {
 	case "gauge":
 		metricRequest, err = model.NewMetricWithRawValues("Gauge", metricName, metricValue)
 	default:
-		h.Log.Error(fmt.Sprintf("Metric type=%v is unsupported", metricType))
-		ginContext.String(http.StatusBadRequest, "Metric type is unsupported")
-		return
+		h.Log.Warn(fmt.Sprintf("Metric type=%v is unsupported", metricType))
+		metricRequest, err = model.NewMetricWithRawValues(metricType, metricName, metricValue)
 	}
 
 	if err != nil {

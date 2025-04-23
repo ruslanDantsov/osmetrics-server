@@ -100,9 +100,5 @@ func ParseMetricID(s string) (MetricID, error) {
 	}
 
 	id := MetricID(trimmed)
-	if !id.IsValid() {
-		return "", fmt.Errorf("invalid MetricID: %q", trimmed)
-	}
-
 	return id, nil
 }
