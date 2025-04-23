@@ -5,17 +5,11 @@ import (
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 	"testing"
 )
 
-type MockLogger struct{}
-
-func (m MockLogger) Info(msg string)  {}
-func (m MockLogger) Error(msg string) {}
-
 type MockRestClient struct{}
-
-type MockConfig struct{}
 
 func NewMockAgentConfig() *config.AgentConfig {
 	return &config.AgentConfig{
@@ -31,9 +25,17 @@ func (mrc *MockRestClient) R() *resty.Request {
 		SetBody("mock").
 		SetHeader("Content-Type", "text/plain")
 }
+func setupTest() (*zap.Logger, *MockRestClient, *config.AgentConfig) {
+	logger, _ := zap.NewDevelopment()
+	return logger, &MockRestClient{}, NewMockAgentConfig()
+}
 
 func TestAppendMetric(t *testing.T) {
-	ms := NewMetricService(MockLogger{}, &MockRestClient{}, NewMockAgentConfig())
+	logger, client, cfg := setupTest()
+	defer logger.Sync()
+
+	ms := NewMetricService(logger, client, cfg)
+
 	ms.appendMetric(enum.Alloc, 123.45)
 
 	val, exists := ms.Metrics[enum.Alloc]
@@ -42,7 +44,10 @@ func TestAppendMetric(t *testing.T) {
 }
 
 func TestAggregateMetric(t *testing.T) {
-	ms := NewMetricService(MockLogger{}, &MockRestClient{}, NewMockAgentConfig())
+	logger, client, cfg := setupTest()
+	defer logger.Sync()
+
+	ms := NewMetricService(logger, client, cfg)
 	ms.aggregateMetric(enum.PollCount, 5)
 	ms.aggregateMetric(enum.PollCount, 3)
 
@@ -52,7 +57,11 @@ func TestAggregateMetric(t *testing.T) {
 }
 
 func TestCollectMetrics(t *testing.T) {
-	ms := NewMetricService(MockLogger{}, &MockRestClient{}, NewMockAgentConfig())
+	logger, client, cfg := setupTest()
+	defer logger.Sync()
+
+	ms := NewMetricService(logger, client, cfg)
+
 	ms.CollectMetrics()
 
 	_, exists := ms.Metrics[enum.Alloc]
