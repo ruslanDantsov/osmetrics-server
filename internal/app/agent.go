@@ -6,7 +6,6 @@ import (
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
 	"github.com/ruslanDantsov/osmetrics-server/internal/service"
 	"go.uber.org/zap"
-	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -33,7 +32,9 @@ func NewAgentApp(cfg *config.AgentConfig, log *zap.Logger) *AgentApp {
 }
 
 func (app *AgentApp) Run() error {
-	app.waitForServer()
+	if err := app.waitForServer(); err != nil {
+		return err
+	}
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -63,14 +64,21 @@ func (app *AgentApp) Run() error {
 	return nil
 }
 
-func (app *AgentApp) waitForServer() {
+func (app *AgentApp) waitForServer() error {
 	url := fmt.Sprintf("http://%v/health", app.config.Address)
-	for {
-		resp, err := http.Get(url)
-		if err == nil && resp.StatusCode == http.StatusOK {
-			return
+
+	for attempt := 1; attempt <= app.config.MaxAttempts; attempt++ {
+		resp, err := app.client.R().Get(url)
+
+		if err == nil && resp.StatusCode() == http.StatusOK {
+			app.logger.Info("Server is ready!")
+			return nil
 		}
-		log.Println("Server not ready, waiting...")
+
+		app.logger.Info("Server not ready, waiting...")
 		time.Sleep(2 * time.Second)
+		continue
+
 	}
+	return fmt.Errorf("server didn't become ready after %v attempts", app.config.MaxAttempts)
 }

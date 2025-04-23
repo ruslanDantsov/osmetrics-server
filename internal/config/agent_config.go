@@ -14,6 +14,7 @@ type AgentConfig struct {
 	ReportInterval          time.Duration `long:"-" description:"Derived duration from ReportIntervalInSeconds"`
 	PollInterval            time.Duration `no:"-" description:"Derived duration from PollSeconds"`
 	LogLevel                string        `short:"l" long:"log" env:"LOG_LEVEL" default:"INFO" description:"Log Level"`
+	MaxAttempts             int           `long:"attempts" default:"30" description:"Max attempts for sending health request until waiting the server"`
 }
 
 func NewAgentConfig(cliArgs []string) *AgentConfig {
