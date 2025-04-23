@@ -24,7 +24,7 @@ func (h *MetricHandler) GetJSON(ginContext *gin.Context) {
 
 	existingMetric, found := h.Storage.GetMetric(metricRequest.ID)
 	if !found {
-		h.Log.Error(fmt.Sprintf("The metric ID=%v not found", metricRequest.ID))
+		h.Log.Warn(fmt.Sprintf("The metric ID=%v not found", metricRequest.ID))
 		ginContext.JSON(http.StatusNotFound, gin.H{"error": "Metric not found"})
 		return
 	}
