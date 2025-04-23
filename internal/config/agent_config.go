@@ -13,6 +13,7 @@ type AgentConfig struct {
 	PollIntervalInSeconds   int           `long:"poll" short:"p" env:"POLL_INTERVAL" default:"2" description:"Frequency (in seconds) for polling metrics from runtime"`
 	ReportInterval          time.Duration `long:"-" description:"Derived duration from ReportIntervalInSeconds"`
 	PollInterval            time.Duration `no:"-" description:"Derived duration from PollSeconds"`
+	LogLevel                string        `short:"l" long:"log" env:"LOG_LEVEL" default:"INFO" description:"Log Level"`
 }
 
 func NewAgentConfig(cliArgs []string) *AgentConfig {

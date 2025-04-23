@@ -21,10 +21,6 @@ func main() {
 
 	serverApp := app.NewServerApp(serverConfig, logger.Log)
 	if err := serverApp.Run(); err != nil {
-		logger.Log.Fatal(fmt.Sprintf("Server initialized failed: %v", err.Error()))
-	}
-
-	if err := serverApp.Run(); err != nil {
 		logger.Log.Fatal(fmt.Sprintf("Server start failed: %v", err.Error()))
 	}
 }
