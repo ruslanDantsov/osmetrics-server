@@ -40,9 +40,16 @@ func (s *MemStorage) GetMetric(metricID enum.MetricID) (*model.Metrics, bool) {
 	defer s.mu.RUnlock()
 
 	if val, found := s.Storage[metricID.String()]; found {
-		s.Log.Info(fmt.Sprintf("GET metric name=%v type=%v delta=%v value=%v", val.ID, val.MType, val.Delta, val.Value))
+		if val.MType == "Counter" {
+			s.Log.Info(fmt.Sprintf("Get metric name=%v type=%v delta=%v", val.ID, val.MType, *val.Delta))
+		}
+
+		if val.MType == "Gauge" {
+			s.Log.Info(fmt.Sprintf("Get metric name=%v type=%v delta=%v", val.ID, val.MType, *val.Value))
+		}
 		return val, true
 	}
+
 	return nil, false
 }
 
