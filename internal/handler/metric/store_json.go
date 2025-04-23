@@ -6,6 +6,7 @@ import (
 	"github.com/mailru/easyjson"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model"
 	"net/http"
+	"strings"
 )
 
 func (h *MetricHandler) StoreJSON(ginContext *gin.Context) {
@@ -17,8 +18,8 @@ func (h *MetricHandler) StoreJSON(ginContext *gin.Context) {
 		return
 	}
 
-	if metricRequest.MType != "Gauge" && metricRequest.MType != "Counter" {
-		h.Log.Error(fmt.Sprintf("Metric type=%v is unsupported", metricRequest.MType))
+	if strings.ToLower(metricRequest.MType) != "gauge" && strings.ToLower(metricRequest.MType) != "counter" {
+		h.Log.Warn(fmt.Sprintf("Metric type=%v is unsupported", metricRequest.MType))
 	}
 
 	updatedMetric, err := h.Storage.SaveMetric(&metricRequest)

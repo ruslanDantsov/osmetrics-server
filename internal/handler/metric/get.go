@@ -37,19 +37,19 @@ func (h *MetricHandler) Get(ginContext *gin.Context) {
 }
 
 func (h *MetricHandler) handleGetCounterMetric(ginContext *gin.Context) {
-	rawMetricName := ginContext.Param(constants.URLParamMetricName)
+	rawMetricID := ginContext.Param(constants.URLParamMetricName)
 
-	metricName, err := enum.ParseMetricID(rawMetricName)
+	metricID, err := enum.ParseMetricID(rawMetricID)
 	if err != nil {
 		h.Log.Error(err.Error())
 		ginContext.String(http.StatusNotFound, "Metric name is unsupported")
 		return
 	}
 
-	metricModel, found := h.Storage.GetMetric(metricName)
+	metricModel, found := h.Storage.GetMetric(metricID)
 
 	if !found {
-		h.Log.Error(fmt.Sprintf("The counter_metric name=%v not found", metricName))
+		h.Log.Error(fmt.Sprintf("The counter_metric name=%v not found", metricID))
 		ginContext.String(http.StatusNotFound, "Metric not found")
 		return
 	}
