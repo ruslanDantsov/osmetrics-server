@@ -46,7 +46,7 @@ func (h *MetricHandler) handleGetCounterMetric(ginContext *gin.Context) {
 		return
 	}
 
-	counterModel, found := h.Storage.GetCounterMetric(metricName)
+	metricModel, found := h.Storage.GetMetric(metricName)
 
 	if !found {
 		h.Log.Error(fmt.Sprintf("The counter_metric name=%v not found", metricName))
@@ -55,7 +55,7 @@ func (h *MetricHandler) handleGetCounterMetric(ginContext *gin.Context) {
 	}
 
 	ginContext.Header("Content-Type", "text/html")
-	ginContext.String(http.StatusOK, strconv.FormatInt(counterModel.Value, 10))
+	ginContext.String(http.StatusOK, strconv.FormatInt(*metricModel.Delta, 10))
 }
 
 func (h *MetricHandler) handleGetGaugeMetric(ginContext *gin.Context) {
@@ -68,7 +68,7 @@ func (h *MetricHandler) handleGetGaugeMetric(ginContext *gin.Context) {
 		return
 	}
 
-	gaugeModel, found := h.Storage.GetGaugeMetric(metricName)
+	gaugeModel, found := h.Storage.GetMetric(metricName)
 
 	if !found {
 		h.Log.Error(fmt.Sprintf("The gauge_metric name=%v not found", metricName))
@@ -77,5 +77,5 @@ func (h *MetricHandler) handleGetGaugeMetric(ginContext *gin.Context) {
 	}
 
 	ginContext.Header("Content-Type", "text/html")
-	ginContext.String(http.StatusOK, strconv.FormatFloat(gaugeModel.Value, 'f', -1, 64))
+	ginContext.String(http.StatusOK, strconv.FormatFloat(*gaugeModel.Value, 'f', -1, 64))
 }

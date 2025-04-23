@@ -26,14 +26,14 @@ func (h *MetricHandler) handleCreateCounterMetric(ginContext *gin.Context) {
 	metricName := ginContext.Param(constants.URLParamMetricName)
 	metricValue := ginContext.Param(constants.URLParamMetricValue)
 
-	counterModel, err := model.NewCounterMetricModelWithRawValues(metricName, metricValue)
+	counterModel, err := model.NewMetricWithRawValues("Counter", metricName, metricValue)
 	if err != nil {
 		h.Log.Error(err.Error())
 		ginContext.String(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	_, err = h.Storage.SaveCounterMetric(counterModel)
+	_, err = h.Storage.SaveMetric(counterModel)
 	if err != nil {
 		h.Log.Error(err.Error())
 		ginContext.String(http.StatusBadRequest, err.Error())
@@ -47,14 +47,14 @@ func (h *MetricHandler) handleCreateGaugeMetric(ginContext *gin.Context) {
 	metricName := ginContext.Param(constants.URLParamMetricName)
 	metricValue := ginContext.Param(constants.URLParamMetricValue)
 
-	gaugeModel, err := model.NewGaugeMetricModelWithRawValues(metricName, metricValue)
+	gaugeModel, err := model.NewMetricWithRawValues("Gauge", metricName, metricValue)
 	if err != nil {
 		h.Log.Error(err.Error())
 		ginContext.String(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	_, err = h.Storage.SaveGaugeMetric(gaugeModel)
+	_, err = h.Storage.SaveMetric(gaugeModel)
 	if err != nil {
 		h.Log.Error(err.Error())
 		ginContext.String(http.StatusBadRequest, err.Error())
