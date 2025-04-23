@@ -71,7 +71,7 @@ func (s *MemStorage) SaveMetric(metric *model.Metrics) (*model.Metrics, error) {
 	s.Storage[key] = metric
 
 	if metric.MType == "counter" {
-		s.Log.Info(fmt.Sprintf("SAVE %v metric id=%v value=%v", metric.MType, metric.ID, *metric.Delta))
+		s.Log.Info(fmt.Sprintf("SAVE %v metric id=%v delta=%v", metric.MType, metric.ID, *metric.Delta))
 	}
 
 	if metric.MType == "gauge" {
