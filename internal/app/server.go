@@ -45,7 +45,9 @@ func (app *ServerApp) Run() error {
 	router.GET("/health", app.healthHandler.GetHealth)
 	router.GET("/value/:type/:name", app.metricHandler.Get)
 	router.POST("/value", app.metricHandler.GetJSON)
+	router.POST("/value/", app.metricHandler.GetJSON)
 	router.POST("/update", app.metricHandler.StoreJSON)
+	router.POST("/update/", app.metricHandler.StoreJSON)
 	router.POST("/update/:type/:name/:value", app.metricHandler.Store)
 	router.Any(`/:path/`, app.commonHandler.ServeHTTP)
 
