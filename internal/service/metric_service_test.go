@@ -3,7 +3,7 @@ package service
 import (
 	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
-	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
+	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -34,19 +34,19 @@ func (mrc *MockRestClient) R() *resty.Request {
 
 func TestAppendMetric(t *testing.T) {
 	ms := NewMetricService(MockLogger{}, &MockRestClient{}, NewMockAgentConfig())
-	ms.appendMetric(metric.Alloc, 123.45)
+	ms.appendMetric(enum.Alloc, 123.45)
 
-	val, exists := ms.Metrics[metric.Alloc]
+	val, exists := ms.Metrics[enum.Alloc]
 	assert.True(t, exists)
 	assert.Equal(t, 123.45, val)
 }
 
 func TestAggregateMetric(t *testing.T) {
 	ms := NewMetricService(MockLogger{}, &MockRestClient{}, NewMockAgentConfig())
-	ms.aggregateMetric(metric.PollCount, 5)
-	ms.aggregateMetric(metric.PollCount, 3)
+	ms.aggregateMetric(enum.PollCount, 5)
+	ms.aggregateMetric(enum.PollCount, 3)
 
-	val, exists := ms.Metrics[metric.PollCount]
+	val, exists := ms.Metrics[enum.PollCount]
 	assert.True(t, exists)
 	assert.Equal(t, int64(8), val)
 }
@@ -55,8 +55,8 @@ func TestCollectMetrics(t *testing.T) {
 	ms := NewMetricService(MockLogger{}, &MockRestClient{}, NewMockAgentConfig())
 	ms.CollectMetrics()
 
-	_, exists := ms.Metrics[metric.Alloc]
+	_, exists := ms.Metrics[enum.Alloc]
 	assert.True(t, exists)
-	_, exists = ms.Metrics[metric.RandomValue]
+	_, exists = ms.Metrics[enum.RandomValue]
 	assert.True(t, exists)
 }

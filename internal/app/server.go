@@ -40,8 +40,8 @@ func (app *ServerApp) Run() error {
 
 	router.GET(`/`, app.metricHandler.List)
 	router.GET("/value/:type/:name", app.metricHandler.Get)
-	router.POST("/value", app.metricHandler.GetJson)
-	router.POST("/update", app.metricHandler.StoreJson)
+	router.POST("/value", app.metricHandler.GetJSON)
+	router.POST("/update", app.metricHandler.StoreJSON)
 	router.POST("/update/:type/:name/:value", app.metricHandler.Store)
 	router.Any(`/:path/`, app.commonHandler.ServeHTTP)
 

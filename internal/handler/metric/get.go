@@ -39,7 +39,7 @@ func (h *MetricHandler) Get(ginContext *gin.Context) {
 func (h *MetricHandler) handleGetCounterMetric(ginContext *gin.Context) {
 	rawMetricName := ginContext.Param(constants.URLParamMetricName)
 
-	metricName, err := enum.ParseMetricId(rawMetricName)
+	metricName, err := enum.ParseMetricID(rawMetricName)
 	if err != nil {
 		h.Log.Error(err.Error())
 		ginContext.String(http.StatusNotFound, "Metric name is unsupported")
@@ -61,7 +61,7 @@ func (h *MetricHandler) handleGetCounterMetric(ginContext *gin.Context) {
 func (h *MetricHandler) handleGetGaugeMetric(ginContext *gin.Context) {
 	rawMetricName := ginContext.Param(constants.URLParamMetricName)
 
-	metricName, err := enum.ParseMetricId(rawMetricName)
+	metricName, err := enum.ParseMetricID(rawMetricName)
 	if err != nil {
 		h.Log.Error(err.Error())
 		ginContext.String(http.StatusNotFound, "Metric name is unsupported")

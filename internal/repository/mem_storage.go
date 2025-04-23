@@ -10,7 +10,7 @@ import (
 
 type Storager interface {
 	SaveMetric(m *model.Metrics) (*model.Metrics, error)
-	GetMetric(metricId enum.MetricId) (*model.Metrics, bool)
+	GetMetric(metricId enum.MetricID) (*model.Metrics, bool)
 	GetKnownMetrics() []string
 }
 
@@ -35,7 +35,7 @@ func (s *MemStorage) GetKnownMetrics() []string {
 	return metricNames
 }
 
-func (s *MemStorage) GetMetric(metricId enum.MetricId) (*model.Metrics, bool) {
+func (s *MemStorage) GetMetric(metricId enum.MetricID) (*model.Metrics, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

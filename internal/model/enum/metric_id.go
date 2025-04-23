@@ -5,41 +5,41 @@ import (
 	"strings"
 )
 
-type MetricId string
+type MetricID string
 
 const (
-	Alloc         MetricId = "Alloc"
-	BuckHashSys   MetricId = "BuckHashSys"
-	Frees         MetricId = "Frees"
-	GCCPUFraction MetricId = "GCCPUFraction"
-	GCSys         MetricId = "GCSys"
-	HeapAlloc     MetricId = "HeapAlloc"
-	HeapIdle      MetricId = "HeapIdle"
-	HeapInuse     MetricId = "HeapInuse"
-	HeapObjects   MetricId = "HeapObjects"
-	HeapReleased  MetricId = "HeapReleased"
-	HeapSys       MetricId = "HeapSys"
-	LastGC        MetricId = "LastGC"
-	Lookups       MetricId = "Lookups"
-	MCacheInuse   MetricId = "MCacheInuse"
-	MCacheSys     MetricId = "MCacheSys"
-	MSpanInuse    MetricId = "MSpanInuse"
-	MSpanSys      MetricId = "MSpanSys"
-	Mallocs       MetricId = "Mallocs"
-	NextGC        MetricId = "NextGC"
-	NumForcedGC   MetricId = "NumForcedGC"
-	NumGC         MetricId = "NumGC"
-	OtherSys      MetricId = "OtherSys"
-	PauseTotalNs  MetricId = "PauseTotalNs"
-	StackInuse    MetricId = "StackInuse"
-	StackSys      MetricId = "StackSys"
-	Sys           MetricId = "Sys"
-	TotalAlloc    MetricId = "TotalAlloc"
-	PollCount     MetricId = "PollCount"
-	RandomValue   MetricId = "RandomValue"
+	Alloc         MetricID = "Alloc"
+	BuckHashSys   MetricID = "BuckHashSys"
+	Frees         MetricID = "Frees"
+	GCCPUFraction MetricID = "GCCPUFraction"
+	GCSys         MetricID = "GCSys"
+	HeapAlloc     MetricID = "HeapAlloc"
+	HeapIdle      MetricID = "HeapIdle"
+	HeapInuse     MetricID = "HeapInuse"
+	HeapObjects   MetricID = "HeapObjects"
+	HeapReleased  MetricID = "HeapReleased"
+	HeapSys       MetricID = "HeapSys"
+	LastGC        MetricID = "LastGC"
+	Lookups       MetricID = "Lookups"
+	MCacheInuse   MetricID = "MCacheInuse"
+	MCacheSys     MetricID = "MCacheSys"
+	MSpanInuse    MetricID = "MSpanInuse"
+	MSpanSys      MetricID = "MSpanSys"
+	Mallocs       MetricID = "Mallocs"
+	NextGC        MetricID = "NextGC"
+	NumForcedGC   MetricID = "NumForcedGC"
+	NumGC         MetricID = "NumGC"
+	OtherSys      MetricID = "OtherSys"
+	PauseTotalNs  MetricID = "PauseTotalNs"
+	StackInuse    MetricID = "StackInuse"
+	StackSys      MetricID = "StackSys"
+	Sys           MetricID = "Sys"
+	TotalAlloc    MetricID = "TotalAlloc"
+	PollCount     MetricID = "PollCount"
+	RandomValue   MetricID = "RandomValue"
 )
 
-var validMetricIds = map[MetricId]struct{}{
+var validMetricIDs = map[MetricID]struct{}{
 	Alloc:         {},
 	BuckHashSys:   {},
 	Frees:         {},
@@ -71,13 +71,13 @@ var validMetricIds = map[MetricId]struct{}{
 	RandomValue:   {},
 }
 
-func (m MetricId) IsValid() bool {
-	_, ok := validMetricIds[m]
+func (m MetricID) IsValid() bool {
+	_, ok := validMetricIDs[m]
 	return ok
 }
 
-func (m *MetricId) UnmarshalText(data []byte) error {
-	id, err := ParseMetricId(string(data))
+func (m *MetricID) UnmarshalText(data []byte) error {
+	id, err := ParseMetricID(string(data))
 	if err != nil {
 		return err
 	}
@@ -85,21 +85,21 @@ func (m *MetricId) UnmarshalText(data []byte) error {
 	return nil
 }
 
-func (m MetricId) MarshalText() ([]byte, error) {
+func (m MetricID) MarshalText() ([]byte, error) {
 	return []byte(m), nil
 }
 
-func (m MetricId) String() string {
+func (m MetricID) String() string {
 	return string(m)
 }
 
-func ParseMetricId(s string) (MetricId, error) {
+func ParseMetricID(s string) (MetricID, error) {
 	trimmed := strings.TrimSpace(s)
 	if trimmed == "" {
 		return "", fmt.Errorf("metric ID cannot be empty")
 	}
 
-	id := MetricId(trimmed)
+	id := MetricID(trimmed)
 	if !id.IsValid() {
 		return "", fmt.Errorf("invalid MetricID: %q", trimmed)
 	}

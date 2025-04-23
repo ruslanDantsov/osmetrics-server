@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func (h *MetricHandler) StoreJson(ginContext *gin.Context) {
+func (h *MetricHandler) StoreJSON(ginContext *gin.Context) {
 	var metricRequest model.Metrics
 
 	if err := easyjson.UnmarshalFromReader(ginContext.Request.Body, &metricRequest); err != nil {

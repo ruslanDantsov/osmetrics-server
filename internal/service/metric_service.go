@@ -21,7 +21,7 @@ type MetricService struct {
 	Log     logger.Logger
 	Client  RestClient
 	config  *config.AgentConfig
-	Metrics map[enum.MetricId]interface{}
+	Metrics map[enum.MetricID]interface{}
 }
 
 func NewMetricService(log logger.Logger, client RestClient, agentConfig *config.AgentConfig) *MetricService {
@@ -29,7 +29,7 @@ func NewMetricService(log logger.Logger, client RestClient, agentConfig *config.
 		Log:     log,
 		Client:  client,
 		config:  agentConfig,
-		Metrics: make(map[enum.MetricId]interface{}),
+		Metrics: make(map[enum.MetricID]interface{}),
 	}
 }
 
@@ -72,11 +72,11 @@ func (ms *MetricService) CollectMetrics() {
 	ms.appendMetric(enum.RandomValue, rand.Float64())
 }
 
-func (ms *MetricService) appendMetric(metricType enum.MetricId, value float64) {
+func (ms *MetricService) appendMetric(metricType enum.MetricID, value float64) {
 	ms.Metrics[metricType] = value
 }
 
-func (ms *MetricService) aggregateMetric(metricType enum.MetricId, value int64) {
+func (ms *MetricService) aggregateMetric(metricType enum.MetricID, value int64) {
 	if existingMetric, found := ms.Metrics[metricType]; found {
 		ms.Metrics[metricType] = existingMetric.(int64) + value
 	} else {

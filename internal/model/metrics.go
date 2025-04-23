@@ -8,14 +8,14 @@ import (
 
 //go:generate easyjson -all Metrics.go
 type Metrics struct {
-	ID    enum.MetricId `json:"id"`
+	ID    enum.MetricID `json:"id"`
 	MType string        `json:"type"`
 	Delta *int64        `json:"delta,omitempty"`
 	Value *float64      `json:"value,omitempty"`
 }
 
 func NewMetricWithRawValues(metricType string, metricIdRaw string, valueRaw string) (*Metrics, error) {
-	metricId, err := enum.ParseMetricId(metricIdRaw)
+	metricId, err := enum.ParseMetricID(metricIdRaw)
 	if err != nil {
 		return nil, err
 	}
