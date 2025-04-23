@@ -34,6 +34,14 @@ func (h *MetricHandler) GetJSON(ginContext *gin.Context) {
 
 	_, err := easyjson.MarshalToWriter(existingMetric, ginContext.Writer)
 
+	if existingMetric.MType == "Counter" {
+		h.Log.Debug(fmt.Sprintf("Return: Metric ID=%v Value=%v", existingMetric.ID, existingMetric.Delta))
+	}
+
+	if existingMetric.MType == "Gauge" {
+		h.Log.Debug(fmt.Sprintf("Return: Metric ID=%v Value=%v", existingMetric.ID, existingMetric.Value))
+	}
+
 	if err != nil {
 		h.Log.Error(fmt.Sprintf("Error on marshal metric data. %v", err))
 		ginContext.JSON(http.StatusNotFound, gin.H{"error": "Metric not found"})
