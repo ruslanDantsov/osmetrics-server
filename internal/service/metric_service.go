@@ -68,6 +68,8 @@ func (ms *MetricService) CollectMetrics() {
 		enum.StackSys:      float64(memStats.StackSys),
 		enum.Sys:           float64(memStats.Sys),
 		enum.TotalAlloc:    float64(memStats.TotalAlloc),
+		enum.NumForcedGC:   float64(memStats.NumForcedGC),
+		enum.NumGC:         float64(memStats.NumGC),
 		enum.RandomValue:   rand.Float64(),
 	}
 
