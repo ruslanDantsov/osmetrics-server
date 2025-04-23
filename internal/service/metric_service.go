@@ -5,7 +5,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
 	"github.com/ruslanDantsov/osmetrics-server/internal/logger"
-	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
+	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum"
 	"math/rand"
 	"net/http"
 	"runtime"
@@ -21,7 +21,7 @@ type MetricService struct {
 	Log     logger.Logger
 	Client  RestClient
 	config  *config.AgentConfig
-	Metrics map[metric.Metric]interface{}
+	Metrics map[enum.MetricId]interface{}
 }
 
 func NewMetricService(log logger.Logger, client RestClient, agentConfig *config.AgentConfig) *MetricService {
@@ -29,54 +29,54 @@ func NewMetricService(log logger.Logger, client RestClient, agentConfig *config.
 		Log:     log,
 		Client:  client,
 		config:  agentConfig,
-		Metrics: make(map[metric.Metric]interface{}),
+		Metrics: make(map[enum.MetricId]interface{}),
 	}
 }
 
 func (ms *MetricService) CollectMetrics() {
 	ms.Log.Info("Start process for collecting metrics")
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
 
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	ms.appendMetric(metric.Alloc, float64(m.Alloc))
-	ms.appendMetric(metric.BuckHashSys, float64(m.BuckHashSys))
-	ms.appendMetric(metric.Frees, float64(m.Frees))
-	ms.appendMetric(metric.GCCPUFraction, m.GCCPUFraction)
-	ms.appendMetric(metric.GCSys, float64(m.GCSys))
-	ms.appendMetric(metric.HeapAlloc, float64(m.HeapAlloc))
-	ms.appendMetric(metric.HeapIdle, float64(m.HeapIdle))
-	ms.appendMetric(metric.HeapInuse, float64(m.HeapInuse))
-	ms.appendMetric(metric.HeapObjects, float64(m.HeapObjects))
-	ms.appendMetric(metric.HeapReleased, float64(m.HeapReleased))
-	ms.appendMetric(metric.HeapSys, float64(m.HeapSys))
-	ms.appendMetric(metric.LastGC, float64(m.LastGC))
-	ms.appendMetric(metric.Lookups, float64(m.Lookups))
-	ms.appendMetric(metric.MCacheInuse, float64(m.MCacheInuse))
-	ms.appendMetric(metric.MCacheSys, float64(m.MCacheSys))
-	ms.appendMetric(metric.MSpanInuse, float64(m.MSpanInuse))
-	ms.appendMetric(metric.MSpanSys, float64(m.MSpanSys))
-	ms.appendMetric(metric.Mallocs, float64(m.Mallocs))
-	ms.appendMetric(metric.NextGC, float64(m.NextGC))
-	ms.appendMetric(metric.NumForcedGC, float64(m.NumForcedGC))
-	ms.appendMetric(metric.NextGC, float64(m.NextGC))
-	ms.appendMetric(metric.OtherSys, float64(m.OtherSys))
-	ms.appendMetric(metric.PauseTotalNs, float64(m.PauseTotalNs))
-	ms.appendMetric(metric.StackInuse, float64(m.StackInuse))
-	ms.appendMetric(metric.StackSys, float64(m.StackSys))
-	ms.appendMetric(metric.Sys, float64(m.Sys))
-	ms.appendMetric(metric.TotalAlloc, float64(m.TotalAlloc))
-	ms.aggregateMetric(metric.PollCount, 1)
-	ms.appendMetric(metric.RandomValue, rand.Float64())
+	ms.appendMetric(enum.Alloc, float64(memStats.Alloc))
+	ms.appendMetric(enum.BuckHashSys, float64(memStats.BuckHashSys))
+	ms.appendMetric(enum.Frees, float64(memStats.Frees))
+	ms.appendMetric(enum.GCCPUFraction, memStats.GCCPUFraction)
+	ms.appendMetric(enum.GCSys, float64(memStats.GCSys))
+	ms.appendMetric(enum.HeapAlloc, float64(memStats.HeapAlloc))
+	ms.appendMetric(enum.HeapIdle, float64(memStats.HeapIdle))
+	ms.appendMetric(enum.HeapInuse, float64(memStats.HeapInuse))
+	ms.appendMetric(enum.HeapObjects, float64(memStats.HeapObjects))
+	ms.appendMetric(enum.HeapReleased, float64(memStats.HeapReleased))
+	ms.appendMetric(enum.HeapSys, float64(memStats.HeapSys))
+	ms.appendMetric(enum.LastGC, float64(memStats.LastGC))
+	ms.appendMetric(enum.Lookups, float64(memStats.Lookups))
+	ms.appendMetric(enum.MCacheInuse, float64(memStats.MCacheInuse))
+	ms.appendMetric(enum.MCacheSys, float64(memStats.MCacheSys))
+	ms.appendMetric(enum.MSpanInuse, float64(memStats.MSpanInuse))
+	ms.appendMetric(enum.MSpanSys, float64(memStats.MSpanSys))
+	ms.appendMetric(enum.Mallocs, float64(memStats.Mallocs))
+	ms.appendMetric(enum.NextGC, float64(memStats.NextGC))
+	ms.appendMetric(enum.NumForcedGC, float64(memStats.NumForcedGC))
+	ms.appendMetric(enum.NextGC, float64(memStats.NextGC))
+	ms.appendMetric(enum.OtherSys, float64(memStats.OtherSys))
+	ms.appendMetric(enum.PauseTotalNs, float64(memStats.PauseTotalNs))
+	ms.appendMetric(enum.StackInuse, float64(memStats.StackInuse))
+	ms.appendMetric(enum.StackSys, float64(memStats.StackSys))
+	ms.appendMetric(enum.Sys, float64(memStats.Sys))
+	ms.appendMetric(enum.TotalAlloc, float64(memStats.TotalAlloc))
+	ms.aggregateMetric(enum.PollCount, 1)
+	ms.appendMetric(enum.RandomValue, rand.Float64())
 }
 
-func (ms *MetricService) appendMetric(metricType metric.Metric, value float64) {
+func (ms *MetricService) appendMetric(metricType enum.MetricId, value float64) {
 	ms.Metrics[metricType] = value
 }
 
-func (ms *MetricService) aggregateMetric(metricType metric.Metric, value int64) {
+func (ms *MetricService) aggregateMetric(metricType enum.MetricId, value int64) {
 	if existingMetric, found := ms.Metrics[metricType]; found {
 		ms.Metrics[metricType] = existingMetric.(int64) + value
 	} else {
@@ -87,21 +87,21 @@ func (ms *MetricService) aggregateMetric(metricType metric.Metric, value int64) 
 func (ms *MetricService) SendMetrics() {
 	ms.Log.Info("Start process for sending metrics")
 
-	for metricType, value := range ms.Metrics {
-		switch metricType.Type {
-		case metric.Gauge:
-			err := ms.sendGaugeMetric(metricType.Name, value.(float64))
+	for metricId, value := range ms.Metrics {
+		switch value.(type) {
+		case float64:
+			err := ms.sendGaugeMetric(metricId.String(), value.(float64))
 			if err != nil {
-				ms.Log.Error(fmt.Sprintf("Failed to send metric %s: %v\n", metricType.Name, err))
+				ms.Log.Error(fmt.Sprintf("Failed to send metric %s: %v\n", metricId, err))
 				continue
 			}
-		case metric.Counter:
-			err := ms.sendCounterMetric(metricType.Name, value.(int64))
+		case int64:
+			err := ms.sendCounterMetric(metricId.String(), value.(int64))
 			if err != nil {
-				ms.Log.Error(fmt.Sprintf("Failed to send metric %s: %v\n", metricType.Name, err))
+				ms.Log.Error(fmt.Sprintf("Failed to send metric %s: %v\n", metricId, err))
 				continue
 			}
-			ms.Metrics[metricType] = int64(0)
+			ms.Metrics[metricId] = int64(0)
 		}
 	}
 }
