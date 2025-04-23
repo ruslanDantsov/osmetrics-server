@@ -36,16 +36,13 @@ func (s *MemStorage) GetKnownMetrics() []string {
 }
 
 func (s *MemStorage) GetMetric(metricID enum.MetricID) (*model.Metrics, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	if val, found := s.Storage[metricID.String()]; found {
 		if val.MType == "counter" {
 			s.Log.Info(fmt.Sprintf("Get metric name=%v type=%v delta=%v", val.ID, val.MType, *val.Delta))
 		}
 
 		if val.MType == "gauge" {
-			s.Log.Info(fmt.Sprintf("Get metric name=%v type=%v delta=%v", val.ID, val.MType, *val.Value))
+			s.Log.Info(fmt.Sprintf("Get metric name=%v type=%v value=%v", val.ID, val.MType, *val.Value))
 		}
 		return val, true
 	}
