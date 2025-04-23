@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/ruslanDantsov/osmetrics-server/internal/constants"
-	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
+	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum"
 	"github.com/ruslanDantsov/osmetrics-server/internal/repository"
 	"go.uber.org/zap"
 	"net/http"
@@ -39,7 +39,7 @@ func (h *MetricHandler) Get(ginContext *gin.Context) {
 func (h *MetricHandler) handleGetCounterMetric(ginContext *gin.Context) {
 	rawMetricName := ginContext.Param(constants.URLParamMetricName)
 
-	metricName, err := metric.ParseMetricName(rawMetricName)
+	metricName, err := enum.ParseMetricId(rawMetricName)
 	if err != nil {
 		h.Log.Error(err.Error())
 		ginContext.String(http.StatusNotFound, "Metric name is unsupported")
@@ -61,7 +61,7 @@ func (h *MetricHandler) handleGetCounterMetric(ginContext *gin.Context) {
 func (h *MetricHandler) handleGetGaugeMetric(ginContext *gin.Context) {
 	rawMetricName := ginContext.Param(constants.URLParamMetricName)
 
-	metricName, err := metric.ParseMetricName(rawMetricName)
+	metricName, err := enum.ParseMetricId(rawMetricName)
 	if err != nil {
 		h.Log.Error(err.Error())
 		ginContext.String(http.StatusNotFound, "Metric name is unsupported")

@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func (h *MetricHandler) GetJson(ginContext *gin.Context) {
+func (h *MetricHandler) StoreJson(ginContext *gin.Context) {
 	var metricRequest model.Metrics
 
 	if err := easyjson.UnmarshalFromReader(ginContext.Request.Body, &metricRequest); err != nil {
@@ -20,22 +20,21 @@ func (h *MetricHandler) GetJson(ginContext *gin.Context) {
 	if metricRequest.MType != "Gauge" && metricRequest.MType != "Counter" {
 		h.Log.Error(fmt.Sprintf("Metric type=%v is unsupported", metricRequest.MType))
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Metric type is unsupported", "type": metricRequest.MType})
-	}
-
-	existingMetric, found := h.Storage.GetMetric(metricRequest.ID)
-	if !found {
-		h.Log.Error(fmt.Sprintf("The metric ID=%v not found", metricRequest.ID))
-		ginContext.JSON(http.StatusNotFound, gin.H{"error": "Metric not found"})
 		return
 	}
 
-	ginContext.Header("Content-Type", "application/json")
-	ginContext.Writer.WriteHeader(http.StatusOK)
-
-	_, err := easyjson.MarshalToWriter(existingMetric, ginContext.Writer)
-
+	updatedMetric, err := h.Storage.SaveMetric(&metricRequest)
 	if err != nil {
-		h.Log.Error(fmt.Sprintf("Error on marshal metric data. %v", err))
-		ginContext.JSON(http.StatusNotFound, gin.H{"error": "Metric not found"})
+		h.Log.Error(err.Error())
+		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Can't update metric", "description": err.Error()})
+		return
 	}
+
+	if _, err = easyjson.MarshalToWriter(updatedMetric, ginContext.Writer); err != nil {
+		h.Log.Error(fmt.Sprintf("Error on marshal metric data. %v", err))
+		ginContext.JSON(http.StatusNotFound, gin.H{"error": "Can't convert data to JSON"})
+		return
+	}
+
+	ginContext.Status(http.StatusOK)
 }

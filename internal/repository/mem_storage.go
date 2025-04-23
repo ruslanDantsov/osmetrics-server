@@ -3,14 +3,14 @@ package repository
 import (
 	"fmt"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model"
-	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
+	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum"
 	"go.uber.org/zap"
 	"sync"
 )
 
 type Storager interface {
 	SaveMetric(m *model.Metrics) (*model.Metrics, error)
-	GetMetric(metricType metric.Metric) (*model.Metrics, bool)
+	GetMetric(metricId enum.MetricId) (*model.Metrics, bool)
 	GetKnownMetrics() []string
 }
 
@@ -35,7 +35,7 @@ func (s *MemStorage) GetKnownMetrics() []string {
 	return metricNames
 }
 
-func (s *MemStorage) GetMetric(metricId metric.Metric) (*model.Metrics, bool) {
+func (s *MemStorage) GetMetric(metricId enum.MetricId) (*model.Metrics, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
