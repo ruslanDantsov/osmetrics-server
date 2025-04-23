@@ -87,21 +87,21 @@ func (ms *MetricService) aggregateMetric(metricType enum.MetricID, value int64) 
 func (ms *MetricService) SendMetrics() {
 	ms.Log.Info("Start process for sending metrics")
 
-	for metricId, value := range ms.Metrics {
-		switch value.(type) {
+	for metricID, genericValue := range ms.Metrics {
+		switch value := genericValue.(type) {
 		case float64:
-			err := ms.sendGaugeMetric(metricId.String(), value.(float64))
+			err := ms.sendGaugeMetric(metricID.String(), value)
 			if err != nil {
-				ms.Log.Error(fmt.Sprintf("Failed to send metric %s: %v\n", metricId, err))
+				ms.Log.Error(fmt.Sprintf("Failed to send metric %s: %v\n", metricID, err))
 				continue
 			}
 		case int64:
-			err := ms.sendCounterMetric(metricId.String(), value.(int64))
+			err := ms.sendCounterMetric(metricID.String(), value)
 			if err != nil {
-				ms.Log.Error(fmt.Sprintf("Failed to send metric %s: %v\n", metricId, err))
+				ms.Log.Error(fmt.Sprintf("Failed to send metric %s: %v\n", metricID, err))
 				continue
 			}
-			ms.Metrics[metricId] = int64(0)
+			ms.Metrics[metricID] = int64(0)
 		}
 	}
 }

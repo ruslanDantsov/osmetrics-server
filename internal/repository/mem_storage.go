@@ -10,7 +10,7 @@ import (
 
 type Storager interface {
 	SaveMetric(m *model.Metrics) (*model.Metrics, error)
-	GetMetric(metricId enum.MetricID) (*model.Metrics, bool)
+	GetMetric(metricID enum.MetricID) (*model.Metrics, bool)
 	GetKnownMetrics() []string
 }
 
@@ -35,11 +35,11 @@ func (s *MemStorage) GetKnownMetrics() []string {
 	return metricNames
 }
 
-func (s *MemStorage) GetMetric(metricId enum.MetricID) (*model.Metrics, bool) {
+func (s *MemStorage) GetMetric(metricID enum.MetricID) (*model.Metrics, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if val, found := s.Storage[metricId.String()]; found {
+	if val, found := s.Storage[metricID.String()]; found {
 		s.Log.Info(fmt.Sprintf("GET metric name=%v type=%v delta=%v value=%v", val.ID, val.MType, val.Delta, val.Value))
 		return val, true
 	}

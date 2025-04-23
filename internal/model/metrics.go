@@ -14,8 +14,8 @@ type Metrics struct {
 	Value *float64      `json:"value,omitempty"`
 }
 
-func NewMetricWithRawValues(metricType string, metricIdRaw string, valueRaw string) (*Metrics, error) {
-	metricId, err := enum.ParseMetricID(metricIdRaw)
+func NewMetricWithRawValues(metricType string, metricIDRaw string, valueRaw string) (*Metrics, error) {
+	metricID, err := enum.ParseMetricID(metricIDRaw)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func NewMetricWithRawValues(metricType string, metricIdRaw string, valueRaw stri
 			return nil, err
 		}
 		return &Metrics{
-			ID:    metricId,
+			ID:    metricID,
 			MType: metricType,
 			Value: &floatValue,
 		}, nil
@@ -38,7 +38,7 @@ func NewMetricWithRawValues(metricType string, metricIdRaw string, valueRaw stri
 			return nil, err
 		}
 		return &Metrics{
-			ID:    metricId,
+			ID:    metricID,
 			MType: metricType,
 			Delta: &intValue,
 		}, nil
