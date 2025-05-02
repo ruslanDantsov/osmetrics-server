@@ -40,6 +40,8 @@ func (app *ServerApp) Run() error {
 	router := gin.Default()
 
 	router.Use(middleware.NewLoggerRequestMiddleware(app.logger))
+	router.Use(middleware.NewGzipCompressionMiddleware())
+	router.Use(middleware.NewGzipDecompressionMiddleware())
 
 	router.GET(`/`, app.metricHandler.List)
 	router.GET("/health", app.healthHandler.GetHealth)

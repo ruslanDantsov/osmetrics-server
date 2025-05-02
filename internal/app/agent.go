@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
+	"github.com/ruslanDantsov/osmetrics-server/internal/middleware"
 	"github.com/ruslanDantsov/osmetrics-server/internal/service"
 	"go.uber.org/zap"
 	"net/http"
@@ -21,6 +22,8 @@ type AgentApp struct {
 func NewAgentApp(cfg *config.AgentConfig, log *zap.Logger) *AgentApp {
 
 	client := resty.New()
+	client.OnBeforeRequest(middleware.GzipRestyMiddleware())
+
 	metricService := service.NewMetricService(log, client, cfg)
 
 	return &AgentApp{
