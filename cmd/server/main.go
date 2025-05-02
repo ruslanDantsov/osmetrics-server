@@ -9,7 +9,11 @@ import (
 )
 
 func main() {
-	serverConfig := config.NewServerConfig(os.Args[1:])
+	serverConfig, err := config.NewServerConfig(os.Args[1:])
+
+	if err != nil {
+		logger.Log.Fatal(fmt.Sprintf("Config initialized failed: %v", err.Error()))
+	}
 
 	if err := logger.Initialized(serverConfig.LogLevel); err != nil {
 		logger.Log.Fatal(fmt.Sprintf("Logger initialized failed: %v", err.Error()))

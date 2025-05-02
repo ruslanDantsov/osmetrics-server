@@ -21,15 +21,16 @@ type ServerApp struct {
 }
 
 func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) *ServerApp {
-	storage := repository.NewMemStorage(*log)
-	metricHandler := metric.NewMetricHandler(storage, *log)
+	baseStorage := repository.NewMemStorage(*log)
+	persistentStorage := repository.NewPersistentStorage(baseStorage, cfg.FileStoragePath, cfg.StoreInterval, *log, cfg.Restore)
+	metricHandler := metric.NewMetricHandler(persistentStorage, *log)
 	commonHandler := handler.NewCommonHandler(*log)
 	healthHandler := handler.NewHealthHandler(*log)
 
 	return &ServerApp{
 		config:        cfg,
 		logger:        log,
-		storage:       storage,
+		storage:       persistentStorage,
 		metricHandler: metricHandler,
 		commonHandler: commonHandler,
 		healthHandler: healthHandler,
