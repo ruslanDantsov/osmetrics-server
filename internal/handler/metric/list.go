@@ -6,7 +6,11 @@ import (
 	"net/http"
 )
 
-func (h *MetricHandler) List(c *gin.Context) {
+type KnownMetricsGetter interface {
+	GetKnownMetrics() []string
+}
+
+func (h *GetMetricHandler) List(c *gin.Context) {
 	var metricNames = h.Storage.GetKnownMetrics()
 	htmlContent := "<html><head><title>Список метрик</title></head><body>"
 	htmlContent += "<h1>List of known metrics:</h1>"

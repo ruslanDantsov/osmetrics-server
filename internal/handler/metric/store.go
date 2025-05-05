@@ -5,11 +5,28 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ruslanDantsov/osmetrics-server/internal/constants"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model"
+	"go.uber.org/zap"
 	"net/http"
 	"strings"
 )
 
-func (h *MetricHandler) Store(ginContext *gin.Context) {
+type MetricSaver interface {
+	SaveMetric(m *model.Metrics) (*model.Metrics, error)
+}
+
+type StoreMetricHandler struct {
+	Storage MetricSaver
+	Log     zap.Logger
+}
+
+func NewStoreMetricHandler(storage MetricSaver, log zap.Logger) *StoreMetricHandler {
+	return &StoreMetricHandler{
+		Storage: storage,
+		Log:     log,
+	}
+}
+
+func (h *StoreMetricHandler) Store(ginContext *gin.Context) {
 	metricType := strings.ToLower(ginContext.Param(constants.URLParamMetricType))
 	metricName := ginContext.Param(constants.URLParamMetricName)
 	metricValue := ginContext.Param(constants.URLParamMetricValue)

@@ -4,26 +4,31 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/ruslanDantsov/osmetrics-server/internal/constants"
+	"github.com/ruslanDantsov/osmetrics-server/internal/model"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum"
-	"github.com/ruslanDantsov/osmetrics-server/internal/repository"
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
 )
 
-type MetricHandler struct {
-	Storage repository.Storager
+type MetricGetter interface {
+	GetMetric(metricID enum.MetricID) (*model.Metrics, bool)
+	GetKnownMetrics() []string
+}
+
+type GetMetricHandler struct {
+	Storage MetricGetter
 	Log     zap.Logger
 }
 
-func NewMetricHandler(storage repository.Storager, log zap.Logger) *MetricHandler {
-	return &MetricHandler{
+func NewGetMetricHandler(storage MetricGetter, log zap.Logger) *GetMetricHandler {
+	return &GetMetricHandler{
 		Storage: storage,
 		Log:     log,
 	}
 }
 
-func (h *MetricHandler) Get(ginContext *gin.Context) {
+func (h *GetMetricHandler) Get(ginContext *gin.Context) {
 	metricType := ginContext.Param(constants.URLParamMetricType)
 	switch metricType {
 	case constants.GaugeMetricType:
@@ -36,7 +41,7 @@ func (h *MetricHandler) Get(ginContext *gin.Context) {
 	}
 }
 
-func (h *MetricHandler) handleGetCounterMetric(ginContext *gin.Context) {
+func (h *GetMetricHandler) handleGetCounterMetric(ginContext *gin.Context) {
 	rawMetricID := ginContext.Param(constants.URLParamMetricName)
 
 	metricID, err := enum.ParseMetricID(rawMetricID)
@@ -58,7 +63,7 @@ func (h *MetricHandler) handleGetCounterMetric(ginContext *gin.Context) {
 	ginContext.String(http.StatusOK, strconv.FormatInt(*metricModel.Delta, 10))
 }
 
-func (h *MetricHandler) handleGetGaugeMetric(ginContext *gin.Context) {
+func (h *GetMetricHandler) handleGetGaugeMetric(ginContext *gin.Context) {
 	rawMetricID := ginContext.Param(constants.URLParamMetricName)
 
 	metricID, err := enum.ParseMetricID(rawMetricID)

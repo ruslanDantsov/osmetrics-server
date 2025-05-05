@@ -9,12 +9,6 @@ import (
 	"sync"
 )
 
-type Storager interface {
-	SaveMetric(m *model.Metrics) (*model.Metrics, error)
-	GetMetric(metricID enum.MetricID) (*model.Metrics, bool)
-	GetKnownMetrics() []string
-}
-
 type MemStorage struct {
 	mu      sync.RWMutex
 	Storage map[string]*model.Metrics

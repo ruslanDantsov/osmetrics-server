@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func (h *MetricHandler) GetJSON(ginContext *gin.Context) {
+func (h *GetMetricHandler) GetJSON(ginContext *gin.Context) {
 	var metricRequest model.Metrics
 
 	if err := easyjson.UnmarshalFromReader(ginContext.Request.Body, &metricRequest); err != nil {

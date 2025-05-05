@@ -12,28 +12,29 @@ import (
 )
 
 type ServerApp struct {
-	config        *config.ServerConfig
-	logger        *zap.Logger
-	storage       repository.Storager
-	metricHandler *metric.MetricHandler
-	commonHandler *handler.CommonHandler
-	healthHandler *handler.HealthHandler
+	config             *config.ServerConfig
+	logger             *zap.Logger
+	getMetricHandler   *metric.GetMetricHandler
+	storeMetricHandler *metric.StoreMetricHandler
+	commonHandler      *handler.CommonHandler
+	healthHandler      *handler.HealthHandler
 }
 
 func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) *ServerApp {
 	baseStorage := repository.NewMemStorage(*log)
 	persistentStorage := repository.NewPersistentStorage(baseStorage, cfg.FileStoragePath, cfg.StoreInterval, *log, cfg.Restore)
-	metricHandler := metric.NewMetricHandler(persistentStorage, *log)
+	getMetricHandler := metric.NewGetMetricHandler(persistentStorage, *log)
+	storeMetricHandler := metric.NewStoreMetricHandler(persistentStorage, *log)
 	commonHandler := handler.NewCommonHandler(*log)
 	healthHandler := handler.NewHealthHandler(*log)
 
 	return &ServerApp{
-		config:        cfg,
-		logger:        log,
-		storage:       persistentStorage,
-		metricHandler: metricHandler,
-		commonHandler: commonHandler,
-		healthHandler: healthHandler,
+		config:             cfg,
+		logger:             log,
+		getMetricHandler:   getMetricHandler,
+		storeMetricHandler: storeMetricHandler,
+		commonHandler:      commonHandler,
+		healthHandler:      healthHandler,
 	}
 }
 
@@ -44,12 +45,12 @@ func (app *ServerApp) Run() error {
 	router.Use(middleware.NewGzipCompressionMiddleware())
 	router.Use(middleware.NewGzipDecompressionMiddleware())
 
-	router.GET(`/`, app.metricHandler.List)
+	router.GET(`/`, app.getMetricHandler.List)
 	router.GET("/health", app.healthHandler.GetHealth)
-	router.GET("/value/:type/:name", app.metricHandler.Get)
-	router.POST("/value", app.metricHandler.GetJSON)
-	router.POST("/update", app.metricHandler.StoreJSON)
-	router.POST("/update/:type/:name/:value", app.metricHandler.Store)
+	router.GET("/value/:type/:name", app.getMetricHandler.Get)
+	router.POST("/value", app.getMetricHandler.GetJSON)
+	router.POST("/update", app.storeMetricHandler.StoreJSON)
+	router.POST("/update/:type/:name/:value", app.storeMetricHandler.Store)
 	router.Any(`/:path/`, app.commonHandler.ServeHTTP)
 
 	return http.ListenAndServe(app.config.Address, router)
