@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
+	"github.com/ruslanDantsov/osmetrics-server/internal/constants"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum"
 	"go.uber.org/zap"
@@ -77,7 +78,6 @@ func (ms *MetricService) CollectMetrics() {
 		ms.appendMetric(id, value)
 	}
 
-	// Use aggregate for counters
 	ms.aggregateMetric(enum.PollCount, 1)
 }
 
@@ -102,10 +102,10 @@ func (ms *MetricService) sendMetric(ID enum.MetricID, mType string, value interf
 	}
 
 	switch mType {
-	case "gauge":
+	case constants.GaugeMetricType:
 		v := value.(float64)
 		metric.Value = &v
-	case "counter":
+	case constants.CounterMetricType:
 		v := value.(int64)
 		metric.Delta = &v
 	}
@@ -138,9 +138,9 @@ func (ms *MetricService) SendMetrics() {
 		var err error
 		switch value := genericValue.(type) {
 		case float64:
-			err = ms.sendMetric(metricID, "gauge", value)
+			err = ms.sendMetric(metricID, constants.GaugeMetricType, value)
 		case int64:
-			err = ms.sendMetric(metricID, "counter", value)
+			err = ms.sendMetric(metricID, constants.CounterMetricType, value)
 			if err == nil {
 				ms.Metrics[metricID] = int64(0)
 			}

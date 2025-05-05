@@ -26,9 +26,9 @@ func NewMetricHandler(storage repository.Storager, log zap.Logger) *MetricHandle
 func (h *MetricHandler) Get(ginContext *gin.Context) {
 	metricType := ginContext.Param(constants.URLParamMetricType)
 	switch metricType {
-	case "gauge":
+	case constants.GaugeMetricType:
 		h.handleGetGaugeMetric(ginContext)
-	case "counter":
+	case constants.CounterMetricType:
 		h.handleGetCounterMetric(ginContext)
 	default:
 		h.Log.Error(fmt.Sprintf("Metric type=%v is unsupported", metricType))

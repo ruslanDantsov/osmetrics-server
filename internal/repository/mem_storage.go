@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"github.com/ruslanDantsov/osmetrics-server/internal/constants"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum"
 	"go.uber.org/zap"
@@ -37,11 +38,11 @@ func (s *MemStorage) GetKnownMetrics() []string {
 
 func (s *MemStorage) GetMetric(metricID enum.MetricID) (*model.Metrics, bool) {
 	if val, found := s.Storage[metricID.String()]; found {
-		if val.MType == "counter" {
+		if val.MType == constants.CounterMetricType {
 			s.Log.Info(fmt.Sprintf("Get metric name=%v type=%v delta=%v", val.ID, val.MType, *val.Delta))
 		}
 
-		if val.MType == "gauge" {
+		if val.MType == constants.GaugeMetricType {
 			s.Log.Info(fmt.Sprintf("Get metric name=%v type=%v value=%v", val.ID, val.MType, *val.Value))
 		}
 		return val, true
@@ -57,7 +58,7 @@ func (s *MemStorage) SaveMetric(metric *model.Metrics) (*model.Metrics, error) {
 	key := metric.ID.String()
 	existing, found := s.Storage[key]
 
-	if metric.MType == "counter" {
+	if metric.MType == constants.CounterMetricType {
 		if found && existing.Delta != nil && metric.Delta != nil {
 			*existing.Delta += *metric.Delta
 			s.Log.Info(fmt.Sprintf("UPDATE counter_metric name=%v delta=%v", metric.ID, *existing.Delta))
@@ -67,11 +68,11 @@ func (s *MemStorage) SaveMetric(metric *model.Metrics) (*model.Metrics, error) {
 
 	s.Storage[key] = metric
 
-	if metric.MType == "counter" {
+	if metric.MType == constants.CounterMetricType {
 		s.Log.Info(fmt.Sprintf("SAVE %v metric id=%v delta=%v", metric.MType, metric.ID, *metric.Delta))
 	}
 
-	if metric.MType == "gauge" {
+	if metric.MType == constants.GaugeMetricType {
 		s.Log.Info(fmt.Sprintf("SAVE %v metric id=%v value=%v", metric.MType, metric.ID, *metric.Value))
 	}
 

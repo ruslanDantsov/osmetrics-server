@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"github.com/ruslanDantsov/osmetrics-server/internal/constants"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum"
 	"strconv"
 )
@@ -21,7 +22,7 @@ func NewMetricWithRawValues(metricType string, metricIDRaw string, valueRaw stri
 	}
 
 	switch metricType {
-	case "gauge":
+	case constants.GaugeMetricType:
 		floatValue, err := strconv.ParseFloat(valueRaw, 64)
 		if err != nil {
 			return nil, err
@@ -32,7 +33,7 @@ func NewMetricWithRawValues(metricType string, metricIDRaw string, valueRaw stri
 			Value: &floatValue,
 		}, nil
 
-	case "counter":
+	case constants.CounterMetricType:
 		intValue, err := strconv.ParseInt(valueRaw, 10, 64)
 		if err != nil {
 			return nil, err

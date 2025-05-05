@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/mailru/easyjson"
+	"github.com/ruslanDantsov/osmetrics-server/internal/constants"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model"
 	"net/http"
 	"strings"
@@ -18,7 +19,7 @@ func (h *MetricHandler) StoreJSON(ginContext *gin.Context) {
 		return
 	}
 
-	if strings.ToLower(metricRequest.MType) != "gauge" && strings.ToLower(metricRequest.MType) != "counter" {
+	if strings.ToLower(metricRequest.MType) != constants.GaugeMetricType && strings.ToLower(metricRequest.MType) != constants.CounterMetricType {
 		h.Log.Warn(fmt.Sprintf("Metric type=%v is unsupported", metricRequest.MType))
 	}
 
