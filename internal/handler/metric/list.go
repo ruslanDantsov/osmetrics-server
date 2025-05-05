@@ -1,27 +1,16 @@
-package handler
+package metric
 
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
-	"github.com/ruslanDantsov/osmetrics-server/internal/repository"
 	"net/http"
 )
 
-type MetricListHandler struct {
-	Storage repository.Storager
-	Log     logging.Logger
+type KnownMetricsGetter interface {
+	GetKnownMetrics() []string
 }
 
-func NewMetricListHandler(storage repository.Storager, log logging.Logger) *MetricListHandler {
-	return &MetricListHandler{
-		Log:     log,
-		Storage: storage,
-	}
-}
-
-func (h *MetricListHandler) ServeHTTP(c *gin.Context) {
-	h.Log.Info(fmt.Sprintf("Handle request %v", c.Request.RequestURI))
+func (h *GetMetricHandler) List(c *gin.Context) {
 	var metricNames = h.Storage.GetKnownMetrics()
 	htmlContent := "<html><head><title>Список метрик</title></head><body>"
 	htmlContent += "<h1>List of known metrics:</h1>"

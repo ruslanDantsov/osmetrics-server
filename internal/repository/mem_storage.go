@@ -2,91 +2,73 @@ package repository
 
 import (
 	"fmt"
-	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
+	"github.com/ruslanDantsov/osmetrics-server/internal/constants"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model"
-	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
+	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum"
+	"go.uber.org/zap"
 	"sync"
 )
 
-type Storager interface {
-	SaveGaugeMetric(model *model.GaugeMetricModel) (*model.GaugeMetricModel, error)
-	GetGaugeMetric(metricType metric.Metric) (*model.GaugeMetricModel, bool)
-	SaveCounterMetric(model *model.CounterMetricModel) (*model.CounterMetricModel, error)
-	GetCounterMetric(metricType metric.Metric) (*model.CounterMetricModel, bool)
-	GetKnownMetrics() []string
-}
-
 type MemStorage struct {
 	mu      sync.RWMutex
-	Storage map[string]interface{}
-	Log     logging.Logger
+	Storage map[string]*model.Metrics
+	Log     zap.Logger
 }
 
-func NewMemStorage(log logging.Logger) *MemStorage {
+func NewMemStorage(log zap.Logger) *MemStorage {
 	return &MemStorage{
-		Storage: make(map[string]interface{}),
+		Storage: make(map[string]*model.Metrics),
 		Log:     log,
 	}
 }
 
 func (s *MemStorage) GetKnownMetrics() []string {
 	metricNames := make([]string, 0, len(s.Storage))
-
-	for metricName := range s.Storage {
-		metricNames = append(metricNames, metricName)
+	for name := range s.Storage {
+		metricNames = append(metricNames, name)
 	}
-
 	return metricNames
 }
 
-func (s *MemStorage) GetGaugeMetric(metricName metric.Metric) (*model.GaugeMetricModel, bool) {
-
-	if valRaw, found := s.Storage[metricName.String()]; found {
-		if val, ok := valRaw.(*model.GaugeMetricModel); ok {
-			s.Log.Info(fmt.Sprintf("GET gauge_metric name=%v value=%v", val.Name, val.Value))
-			return val, true
+func (s *MemStorage) GetMetric(metricID enum.MetricID) (*model.Metrics, bool) {
+	if val, found := s.Storage[metricID.String()]; found {
+		if val.MType == constants.CounterMetricType {
+			s.Log.Info(fmt.Sprintf("Get metric name=%v type=%v delta=%v", val.ID, val.MType, *val.Delta))
 		}
+
+		if val.MType == constants.GaugeMetricType {
+			s.Log.Info(fmt.Sprintf("Get metric name=%v type=%v value=%v", val.ID, val.MType, *val.Value))
+		}
+		return val, true
 	}
 
 	return nil, false
 }
 
-func (s *MemStorage) GetCounterMetric(metricName metric.Metric) (*model.CounterMetricModel, bool) {
+func (s *MemStorage) SaveMetric(metric *model.Metrics) (*model.Metrics, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	if valRaw, found := s.Storage[metricName.String()]; found {
-		if val, ok := valRaw.(*model.CounterMetricModel); ok {
-			s.Log.Info(fmt.Sprintf("GET counter_metric name=%v value=%v", val.Name, val.Value))
-			return val, true
+	key := metric.ID.String()
+	existing, found := s.Storage[key]
+
+	if metric.MType == constants.CounterMetricType {
+		if found && existing.Delta != nil && metric.Delta != nil {
+			*existing.Delta += *metric.Delta
+			s.Log.Info(fmt.Sprintf("UPDATE counter_metric name=%v delta=%v", metric.ID, *existing.Delta))
+			return existing, nil
 		}
 	}
 
-	return nil, false
-}
+	s.Storage[key] = metric
 
-func (s *MemStorage) SaveGaugeMetric(model *model.GaugeMetricModel) (*model.GaugeMetricModel, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.Storage[model.Name.String()] = model
-	s.Log.Info(fmt.Sprintf("SAVE gauge_metric name=%v value=%v", model.Name, model.Value))
-
-	return model, nil
-}
-
-func (s *MemStorage) SaveCounterMetric(rawModel *model.CounterMetricModel) (*model.CounterMetricModel, error) {
-	existingCounterModel, found := s.GetCounterMetric(rawModel.Name)
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if found {
-		existingCounterModel.Value += rawModel.Value
-		s.Log.Info(fmt.Sprintf("UPDATE counter_metric name=%v value=%v", existingCounterModel.Name, existingCounterModel.Value))
-	} else {
-		s.Storage[rawModel.Name.String()] = rawModel
-		s.Log.Info(fmt.Sprintf("SAVE counter_metric name=%v value=%v", rawModel.Name, rawModel.Value))
+	if metric.MType == constants.CounterMetricType {
+		s.Log.Info(fmt.Sprintf("SAVE %v metric id=%v delta=%v", metric.MType, metric.ID, *metric.Delta))
 	}
 
-	updatedModel := s.Storage[rawModel.Name.String()]
-	return updatedModel.(*model.CounterMetricModel), nil
+	if metric.MType == constants.GaugeMetricType {
+		s.Log.Info(fmt.Sprintf("SAVE %v metric id=%v value=%v", metric.MType, metric.ID, *metric.Value))
+	}
+
+	return metric, nil
 }

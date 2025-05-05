@@ -13,10 +13,11 @@ type AgentConfig struct {
 	PollIntervalInSeconds   int           `long:"poll" short:"p" env:"POLL_INTERVAL" default:"2" description:"Frequency (in seconds) for polling metrics from runtime"`
 	ReportInterval          time.Duration `long:"-" description:"Derived duration from ReportIntervalInSeconds"`
 	PollInterval            time.Duration `no:"-" description:"Derived duration from PollSeconds"`
+	LogLevel                string        `short:"l" long:"log" env:"LOG_LEVEL" default:"INFO" description:"Log Level"`
+	MaxAttempts             int           `long:"attempts" default:"30" description:"Max attempts for sending health request until waiting the server"`
 }
 
 func NewAgentConfig(cliArgs []string) *AgentConfig {
-	fmt.Println("Start getting data for agent config")
 	config := &AgentConfig{}
 	parser := flags.NewParser(config, flags.Default)
 
@@ -30,6 +31,5 @@ func NewAgentConfig(cliArgs []string) *AgentConfig {
 	config.ReportInterval = time.Duration(config.ReportIntervalInSeconds) * time.Second
 	config.PollInterval = time.Duration(config.PollIntervalInSeconds) * time.Second
 
-	fmt.Println("The data for the agent has been loaded")
 	return config
 }

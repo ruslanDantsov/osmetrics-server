@@ -1,43 +1,26 @@
 package main
 
 import (
-	"github.com/go-resty/resty/v2"
+	"fmt"
+	"github.com/ruslanDantsov/osmetrics-server/internal/app"
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
-	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
-	"github.com/ruslanDantsov/osmetrics-server/internal/service"
+	"github.com/ruslanDantsov/osmetrics-server/internal/logger"
 	"os"
-	"sync"
-	"time"
 )
 
 func main() {
 	agentConfig := config.NewAgentConfig(os.Args[1:])
-	log := logging.NewStdoutLogger()
-	client := resty.New()
-	metricService := service.NewMetricService(log, client, agentConfig)
 
-	var wg sync.WaitGroup
-	wg.Add(2)
+	if err := logger.Initialized(agentConfig.LogLevel); err != nil {
+		logger.Log.Fatal(fmt.Sprintf("Logger initialized failed: %v", err.Error()))
+	}
 
-	go func() {
-		defer wg.Done()
-		ticker := time.NewTicker(agentConfig.PollInterval)
-		defer ticker.Stop()
+	defer logger.Log.Sync()
 
-		for range ticker.C {
-			metricService.CollectMetrics()
-		}
-	}()
+	logger.Log.Info("Starting agent...")
 
-	go func() {
-		wg.Done()
-		ticker := time.NewTicker(agentConfig.ReportInterval)
-		defer ticker.Stop()
-
-		for range ticker.C {
-			metricService.SendMetrics()
-		}
-	}()
-
-	wg.Wait()
+	agentApp := app.NewAgentApp(agentConfig, logger.Log)
+	if err := agentApp.Run(); err != nil {
+		logger.Log.Fatal(fmt.Sprintf("Agent start failed: %v", err.Error()))
+	}
 }

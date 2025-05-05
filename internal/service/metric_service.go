@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
-	"github.com/ruslanDantsov/osmetrics-server/internal/logging"
-	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum/metric"
+	"github.com/ruslanDantsov/osmetrics-server/internal/constants"
+	"github.com/ruslanDantsov/osmetrics-server/internal/model"
+	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum"
+	"go.uber.org/zap"
 	"math/rand"
 	"net/http"
 	"runtime"
@@ -18,65 +20,72 @@ type RestClient interface {
 
 type MetricService struct {
 	mu      sync.Mutex
-	Log     logging.Logger
+	Log     *zap.Logger
 	Client  RestClient
 	config  *config.AgentConfig
-	Metrics map[metric.Metric]interface{}
+	Metrics map[enum.MetricID]interface{}
 }
 
-func NewMetricService(log logging.Logger, client RestClient, agentConfig *config.AgentConfig) *MetricService {
+func NewMetricService(log *zap.Logger, client RestClient, agentConfig *config.AgentConfig) *MetricService {
 	return &MetricService{
 		Log:     log,
 		Client:  client,
 		config:  agentConfig,
-		Metrics: make(map[metric.Metric]interface{}),
+		Metrics: make(map[enum.MetricID]interface{}),
 	}
 }
-
 func (ms *MetricService) CollectMetrics() {
-	ms.Log.Info("Start process for collecting metrics")
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
+	ms.Log.Info("Collecting metrics...")
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
 
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	ms.appendMetric(metric.Alloc, float64(m.Alloc))
-	ms.appendMetric(metric.BuckHashSys, float64(m.BuckHashSys))
-	ms.appendMetric(metric.Frees, float64(m.Frees))
-	ms.appendMetric(metric.GCCPUFraction, m.GCCPUFraction)
-	ms.appendMetric(metric.GCSys, float64(m.GCSys))
-	ms.appendMetric(metric.HeapAlloc, float64(m.HeapAlloc))
-	ms.appendMetric(metric.HeapIdle, float64(m.HeapIdle))
-	ms.appendMetric(metric.HeapInuse, float64(m.HeapInuse))
-	ms.appendMetric(metric.HeapObjects, float64(m.HeapObjects))
-	ms.appendMetric(metric.HeapReleased, float64(m.HeapReleased))
-	ms.appendMetric(metric.HeapSys, float64(m.HeapSys))
-	ms.appendMetric(metric.LastGC, float64(m.LastGC))
-	ms.appendMetric(metric.Lookups, float64(m.Lookups))
-	ms.appendMetric(metric.MCacheInuse, float64(m.MCacheInuse))
-	ms.appendMetric(metric.MCacheSys, float64(m.MCacheSys))
-	ms.appendMetric(metric.MSpanInuse, float64(m.MSpanInuse))
-	ms.appendMetric(metric.MSpanSys, float64(m.MSpanSys))
-	ms.appendMetric(metric.Mallocs, float64(m.Mallocs))
-	ms.appendMetric(metric.NextGC, float64(m.NextGC))
-	ms.appendMetric(metric.NumForcedGC, float64(m.NumForcedGC))
-	ms.appendMetric(metric.NextGC, float64(m.NextGC))
-	ms.appendMetric(metric.OtherSys, float64(m.OtherSys))
-	ms.appendMetric(metric.PauseTotalNs, float64(m.PauseTotalNs))
-	ms.appendMetric(metric.StackInuse, float64(m.StackInuse))
-	ms.appendMetric(metric.StackSys, float64(m.StackSys))
-	ms.appendMetric(metric.Sys, float64(m.Sys))
-	ms.appendMetric(metric.TotalAlloc, float64(m.TotalAlloc))
-	ms.aggregateMetric(metric.PollCount, 1)
-	ms.appendMetric(metric.RandomValue, rand.Float64())
+	// Define metrics to collect as map
+	metrics := map[enum.MetricID]float64{
+		enum.Alloc:         float64(memStats.Alloc),
+		enum.BuckHashSys:   float64(memStats.BuckHashSys),
+		enum.Frees:         float64(memStats.Frees),
+		enum.GCCPUFraction: memStats.GCCPUFraction,
+		enum.GCSys:         float64(memStats.GCSys),
+		enum.HeapAlloc:     float64(memStats.HeapAlloc),
+		enum.HeapIdle:      float64(memStats.HeapIdle),
+		enum.HeapInuse:     float64(memStats.HeapInuse),
+		enum.HeapObjects:   float64(memStats.HeapObjects),
+		enum.HeapReleased:  float64(memStats.HeapReleased),
+		enum.HeapSys:       float64(memStats.HeapSys),
+		enum.LastGC:        float64(memStats.LastGC),
+		enum.Lookups:       float64(memStats.Lookups),
+		enum.MCacheInuse:   float64(memStats.MCacheInuse),
+		enum.MCacheSys:     float64(memStats.MCacheSys),
+		enum.MSpanInuse:    float64(memStats.MSpanInuse),
+		enum.MSpanSys:      float64(memStats.MSpanSys),
+		enum.Mallocs:       float64(memStats.Mallocs),
+		enum.NextGC:        float64(memStats.NextGC),
+		enum.OtherSys:      float64(memStats.OtherSys),
+		enum.PauseTotalNs:  float64(memStats.PauseTotalNs),
+		enum.StackInuse:    float64(memStats.StackInuse),
+		enum.StackSys:      float64(memStats.StackSys),
+		enum.Sys:           float64(memStats.Sys),
+		enum.TotalAlloc:    float64(memStats.TotalAlloc),
+		enum.NumForcedGC:   float64(memStats.NumForcedGC),
+		enum.NumGC:         float64(memStats.NumGC),
+		enum.RandomValue:   rand.Float64(),
+	}
+
+	for id, value := range metrics {
+		ms.appendMetric(id, value)
+	}
+
+	ms.aggregateMetric(enum.PollCount, 1)
 }
 
-func (ms *MetricService) appendMetric(metricType metric.Metric, value float64) {
+func (ms *MetricService) appendMetric(metricType enum.MetricID, value float64) {
 	ms.Metrics[metricType] = value
 }
 
-func (ms *MetricService) aggregateMetric(metricType metric.Metric, value int64) {
+func (ms *MetricService) aggregateMetric(metricType enum.MetricID, value int64) {
 	if existingMetric, found := ms.Metrics[metricType]; found {
 		ms.Metrics[metricType] = existingMetric.(int64) + value
 	} else {
@@ -84,58 +93,60 @@ func (ms *MetricService) aggregateMetric(metricType metric.Metric, value int64) 
 	}
 }
 
-func (ms *MetricService) SendMetrics() {
-	ms.Log.Info("Start process for sending metrics")
+func (ms *MetricService) sendMetric(ID enum.MetricID, mType string, value interface{}) error {
+	url := fmt.Sprintf("http://%v/update", ms.config.Address)
 
-	for metricType, value := range ms.Metrics {
-		switch metricType.Type {
-		case metric.Gauge:
-			err := ms.sendGaugeMetric(metricType.Name, value.(float64))
-			if err != nil {
-				ms.Log.Error(fmt.Sprintf("Failed to send metric %s: %v\n", metricType.Name, err))
-				continue
+	metric := model.Metrics{
+		ID:    ID,
+		MType: mType,
+	}
+
+	switch mType {
+	case constants.GaugeMetricType:
+		v := value.(float64)
+		metric.Value = &v
+	case constants.CounterMetricType:
+		v := value.(int64)
+		metric.Delta = &v
+	}
+
+	json, err := metric.MarshalJSON()
+	if err != nil {
+		return fmt.Errorf("failed to marshal metric: %w", err)
+	}
+
+	resp, err := ms.Client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(json).
+		Post(url)
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		return fmt.Errorf("bad response for metric %s: %v", ID, resp.StatusCode())
+	}
+
+	return nil
+}
+
+func (ms *MetricService) SendMetrics() {
+	ms.Log.Info("Sending metrics...")
+
+	for metricID, genericValue := range ms.Metrics {
+		var err error
+		switch value := genericValue.(type) {
+		case float64:
+			err = ms.sendMetric(metricID, constants.GaugeMetricType, value)
+		case int64:
+			err = ms.sendMetric(metricID, constants.CounterMetricType, value)
+			if err == nil {
+				ms.Metrics[metricID] = int64(0)
 			}
-		case metric.Counter:
-			err := ms.sendCounterMetric(metricType.Name, value.(int64))
-			if err != nil {
-				ms.Log.Error(fmt.Sprintf("Failed to send metric %s: %v\n", metricType.Name, err))
-				continue
-			}
-			ms.Metrics[metricType] = int64(0)
+		}
+		if err != nil {
+			ms.Log.Error(fmt.Sprintf("Failed to send metric %s: %v\n", metricID, err))
 		}
 	}
-}
-
-func (ms *MetricService) sendGaugeMetric(name string, value float64) error {
-	url := fmt.Sprintf("http://%v/update/gauge/%s/%f", ms.config.Address, name, value)
-	resp, err := ms.Client.R().
-		SetHeader("Content-Type", "text/plain").
-		Post(url)
-
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		return fmt.Errorf("bad response for metric %s: %v", name, resp.StatusCode())
-	}
-
-	return nil
-}
-
-func (ms *MetricService) sendCounterMetric(name string, value int64) error {
-	url := fmt.Sprintf("http://%v/update/counter/%s/%v", ms.config.Address, name, value)
-	resp, err := ms.Client.R().
-		SetHeader("Content-Type", "text/plain").
-		Post(url)
-
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		return fmt.Errorf("bad response for metric %s: %v", name, resp.StatusCode())
-	}
-
-	return nil
 }
