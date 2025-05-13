@@ -37,10 +37,7 @@ func connectWithRetries(ctx context.Context, connectionString string, log zap.Lo
 	for attempt := 1; attempt <= constants.DBRetryConnectMaxAttempts; attempt++ {
 		conn, err = pgxpool.New(context.Background(), connectionString)
 		if err == nil {
-			if err = conn.Ping(ctx); err == nil {
-				return conn, nil
-			}
-			conn.Close()
+			return conn, nil
 		}
 
 		if attempt < constants.DBRetryConnectMaxAttempts {
