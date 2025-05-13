@@ -21,7 +21,7 @@ type ServerApp struct {
 	storeMetricHandler *metric.StoreMetricHandler
 	commonHandler      *handler.CommonHandler
 	healthHandler      *handler.HealthHandler
-	dbHealthHandler    *handler.DbHandler
+	dbHealthHandler    *handler.DBHandler
 	db                 *pgxpool.Pool
 }
 
@@ -42,7 +42,7 @@ func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) (*ServerApp, error)
 	storeMetricHandler := metric.NewStoreMetricHandler(persistentStorage, *log)
 	commonHandler := handler.NewCommonHandler(*log)
 	healthHandler := handler.NewHealthHandler(*log)
-	dbHealthHandler := handler.NewDbHandler(*log, db)
+	dbHealthHandler := handler.NewDBHandler(*log, db)
 
 	return &ServerApp{
 		config:             cfg,
@@ -65,7 +65,7 @@ func (app *ServerApp) Run() error {
 
 	router.GET(`/`, app.getMetricHandler.List)
 	router.GET("/health", app.healthHandler.GetHealth)
-	router.GET("/ping", app.dbHealthHandler.GetDbHealth)
+	router.GET("/ping", app.dbHealthHandler.GetDBHealth)
 	router.GET("/value/:type/:name", app.getMetricHandler.Get)
 	router.POST("/value", app.getMetricHandler.GetJSON)
 	router.POST("/update", app.storeMetricHandler.StoreJSON)

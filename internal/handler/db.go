@@ -9,19 +9,19 @@ import (
 	"net/http"
 )
 
-type DbHandler struct {
+type DBHandler struct {
 	Log zap.Logger
 	db  *pgxpool.Pool
 }
 
-func NewDbHandler(log zap.Logger, db *pgxpool.Pool) *DbHandler {
-	return &DbHandler{
+func NewDBHandler(log zap.Logger, db *pgxpool.Pool) *DBHandler {
+	return &DBHandler{
 		Log: log,
 		db:  db,
 	}
 }
 
-func (h *DbHandler) GetDbHealth(ginContext *gin.Context) {
+func (h *DBHandler) GetDBHealth(ginContext *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), constants.DBPingTimeout)
 	defer cancel()
 
