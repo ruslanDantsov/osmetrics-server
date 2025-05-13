@@ -1,20 +1,18 @@
 package handler
 
 import (
-	"context"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/ruslanDantsov/osmetrics-server/internal/constants"
+	"github.com/ruslanDantsov/osmetrics-server/internal/repository"
 	"go.uber.org/zap"
 	"net/http"
 )
 
 type DBHandler struct {
 	Log zap.Logger
-	db  *pgxpool.Pool
+	db  repository.PostgreStorage
 }
 
-func NewDBHandler(log zap.Logger, db *pgxpool.Pool) *DBHandler {
+func NewDBHandler(log zap.Logger, db repository.PostgreStorage) *DBHandler {
 	return &DBHandler{
 		Log: log,
 		db:  db,
@@ -22,10 +20,7 @@ func NewDBHandler(log zap.Logger, db *pgxpool.Pool) *DBHandler {
 }
 
 func (h *DBHandler) GetDBHealth(ginContext *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), constants.DBPingTimeout)
-	defer cancel()
-
-	if err := h.db.Ping(ctx); err != nil {
+	if err := h.db.Ping(); err != nil {
 		h.Log.Warn("DB health check failed", zap.Error(err))
 		ginContext.String(http.StatusInternalServerError, "DB health check failed")
 		return

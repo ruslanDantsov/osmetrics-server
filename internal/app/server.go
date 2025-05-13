@@ -1,10 +1,8 @@
 package app
 
 import (
-	"context"
-	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
 	"github.com/ruslanDantsov/osmetrics-server/internal/handler"
 	"github.com/ruslanDantsov/osmetrics-server/internal/handler/metric"
@@ -22,19 +20,10 @@ type ServerApp struct {
 	commonHandler      *handler.CommonHandler
 	healthHandler      *handler.HealthHandler
 	dbHealthHandler    *handler.DBHandler
-	db                 *pgxpool.Pool
+	db                 *repository.PostgreStorage
 }
 
 func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) (*ServerApp, error) {
-	db, err := pgxpool.New(context.Background(), cfg.DatabaseConnection)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create connection pool: %w", err)
-	}
-
-	err = db.Ping(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("database ping failed: %w", err)
-	}
 
 	baseStorage := repository.NewMemStorage(*log)
 	persistentStorage := repository.NewPersistentStorage(baseStorage, cfg.FileStoragePath, cfg.StoreInterval, *log, cfg.Restore)
@@ -42,7 +31,12 @@ func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) (*ServerApp, error)
 	storeMetricHandler := metric.NewStoreMetricHandler(persistentStorage, *log)
 	commonHandler := handler.NewCommonHandler(*log)
 	healthHandler := handler.NewHealthHandler(*log)
-	dbHealthHandler := handler.NewDBHandler(*log, db)
+	db, err := repository.NewPostgreStorage(*log, cfg.DatabaseConnection)
+	if err != nil {
+		return nil, err
+	}
+
+	dbHealthHandler := handler.NewDBHandler(*log, *db)
 
 	return &ServerApp{
 		config:             cfg,
@@ -76,7 +70,5 @@ func (app *ServerApp) Run() error {
 }
 
 func (app *ServerApp) Close() {
-	if app.db != nil {
-		app.db.Close()
-	}
+	app.db.Close()
 }
