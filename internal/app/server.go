@@ -36,7 +36,7 @@ func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) (*ServerApp, error)
 		return nil, err
 	}
 
-	dbHealthHandler := handler.NewDBHandler(*log, *db)
+	dbHealthHandler := handler.NewDBHandler(*log, db)
 
 	return &ServerApp{
 		config:             cfg,

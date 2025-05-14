@@ -2,17 +2,20 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ruslanDantsov/osmetrics-server/internal/repository"
 	"go.uber.org/zap"
 	"net/http"
 )
 
-type DBHandler struct {
-	Log zap.Logger
-	db  repository.PostgreStorage
+type StorageHealthChecker interface {
+	Ping() error
 }
 
-func NewDBHandler(log zap.Logger, db repository.PostgreStorage) *DBHandler {
+type DBHandler struct {
+	Log zap.Logger
+	db  StorageHealthChecker
+}
+
+func NewDBHandler(log zap.Logger, db StorageHealthChecker) *DBHandler {
 	return &DBHandler{
 		Log: log,
 		db:  db,
