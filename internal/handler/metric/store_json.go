@@ -23,7 +23,8 @@ func (h *StoreMetricHandler) StoreJSON(ginContext *gin.Context) {
 		h.Log.Warn(fmt.Sprintf("Metric type=%v is unsupported", metricRequest.MType))
 	}
 
-	updatedMetric, err := h.Storage.SaveMetric(&metricRequest)
+	ctx := ginContext.Request.Context()
+	updatedMetric, err := h.Storage.SaveMetric(ctx, &metricRequest)
 	if err != nil {
 		h.Log.Error(err.Error())
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Can't update metric", "description": err.Error()})

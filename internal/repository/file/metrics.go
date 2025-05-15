@@ -1,16 +1,18 @@
-package repository
+package file
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum"
+	"github.com/ruslanDantsov/osmetrics-server/internal/repository/memory"
 	"go.uber.org/zap"
 	"os"
 	"time"
 )
 
 type PersistentStorage struct {
-	base          *MemStorage
+	base          *memory.MemStorage
 	filePath      string
 	logger        zap.Logger
 	ticker        *time.Ticker
@@ -19,7 +21,7 @@ type PersistentStorage struct {
 	isRestore     bool
 }
 
-func NewPersistentStorage(base *MemStorage, filePath string, storeInterval time.Duration, logger zap.Logger, isRestore bool) *PersistentStorage {
+func NewPersistentStorage(base *memory.MemStorage, filePath string, storeInterval time.Duration, logger zap.Logger, isRestore bool) *PersistentStorage {
 	ps := &PersistentStorage{
 		base:          base,
 		filePath:      filePath,
@@ -36,6 +38,14 @@ func NewPersistentStorage(base *MemStorage, filePath string, storeInterval time.
 		ps.StartAutoSave(storeInterval)
 	}
 	return ps
+}
+
+func (ps *PersistentStorage) HealthCheck(ctx context.Context) error {
+	return nil
+}
+
+func (ps *PersistentStorage) Close() {
+	//For this type of storage we don't need implementation
 }
 
 func (ps *PersistentStorage) StartAutoSave(interval time.Duration) {
@@ -62,8 +72,8 @@ func (ps *PersistentStorage) Shutdown() {
 	ps.saveToFile()
 }
 
-func (ps *PersistentStorage) SaveMetric(m *model.Metrics) (*model.Metrics, error) {
-	result, err := ps.base.SaveMetric(m)
+func (ps *PersistentStorage) SaveMetric(ctx context.Context, m *model.Metrics) (*model.Metrics, error) {
+	result, err := ps.base.SaveMetric(ctx, m)
 	if err != nil {
 		return nil, err
 	}
@@ -75,17 +85,17 @@ func (ps *PersistentStorage) SaveMetric(m *model.Metrics) (*model.Metrics, error
 	return result, nil
 }
 
-func (ps *PersistentStorage) GetMetric(metricID enum.MetricID) (*model.Metrics, bool) {
-	return ps.base.GetMetric(metricID)
+func (ps *PersistentStorage) GetMetric(ctx context.Context, metricID enum.MetricID) (*model.Metrics, bool) {
+	return ps.base.GetMetric(ctx, metricID)
 }
 
-func (ps *PersistentStorage) GetKnownMetrics() []string {
-	return ps.base.GetKnownMetrics()
+func (ps *PersistentStorage) GetKnownMetrics(ctx context.Context) []string {
+	return ps.base.GetKnownMetrics(ctx)
 }
 
 func (ps *PersistentStorage) saveToFile() {
-	ps.base.mu.RLock()
-	defer ps.base.mu.RUnlock()
+	ps.base.Mu.RLock()
+	defer ps.base.Mu.RUnlock()
 
 	file, err := os.Create(ps.filePath)
 	if err != nil {
@@ -118,8 +128,8 @@ func (ps *PersistentStorage) loadFromFile() {
 		return
 	}
 
-	ps.base.mu.Lock()
-	defer ps.base.mu.Unlock()
+	ps.base.Mu.Lock()
+	defer ps.base.Mu.Unlock()
 	ps.base.Storage = data
 	ps.logger.Info("Metrics restored from file", zap.Int("count", len(data)))
 }
