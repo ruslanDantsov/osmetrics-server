@@ -81,3 +81,17 @@ func (s *MemStorage) SaveMetric(ctx context.Context, metric *model.Metrics) (*mo
 
 	return metric, nil
 }
+
+func (s *MemStorage) SaveAllMetrics(ctx context.Context, metricList model.MetricsList) (model.MetricsList, error) {
+	var savedMetrics model.MetricsList
+
+	for _, metric := range metricList {
+		savedMetric, err := s.SaveMetric(ctx, &metric)
+		if err != nil {
+			return nil, fmt.Errorf("failed to save metric %v: %w", metric.ID, err)
+		}
+		savedMetrics = append(savedMetrics, *savedMetric)
+	}
+
+	return savedMetrics, nil
+}

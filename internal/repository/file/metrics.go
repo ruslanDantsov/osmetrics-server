@@ -84,6 +84,18 @@ func (ps *PersistentStorage) SaveMetric(ctx context.Context, m *model.Metrics) (
 
 	return result, nil
 }
+func (ps *PersistentStorage) SaveAllMetrics(ctx context.Context, metricList model.MetricsList) (model.MetricsList, error) {
+	result, err := ps.base.SaveAllMetrics(ctx, metricList)
+	if err != nil {
+		return nil, err
+	}
+
+	if ps.storeInterval == 0 {
+		ps.saveToFile()
+	}
+
+	return result, nil
+}
 
 func (ps *PersistentStorage) GetMetric(ctx context.Context, metricID enum.MetricID) (*model.Metrics, bool) {
 	return ps.base.GetMetric(ctx, metricID)

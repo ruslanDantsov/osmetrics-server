@@ -13,6 +13,7 @@ import (
 
 type MetricSaver interface {
 	SaveMetric(ctx context.Context, m *model.Metrics) (*model.Metrics, error)
+	SaveAllMetrics(ctx context.Context, metricList model.MetricsList) (model.MetricsList, error)
 }
 
 type StoreMetricHandler struct {

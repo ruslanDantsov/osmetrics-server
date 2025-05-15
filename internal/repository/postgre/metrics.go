@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
@@ -98,6 +99,40 @@ func (s *PostgreStorage) GetKnownMetrics(ctx context.Context) []string {
 
 }
 
+func (s *PostgreStorage) SaveAllMetrics(ctx context.Context, metricList model.MetricsList) (model.MetricsList, error) {
+	tx, err := s.conn.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("could not begin transaction: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			tx.Rollback(ctx)
+		}
+	}()
+
+	for _, metric := range metricList {
+		switch metric.MType {
+		case constants.CounterMetricType:
+			err = s.saveCounterMetricTx(ctx, tx, &metric)
+		case constants.GaugeMetricType:
+			err = s.saveGaugeMetricTx(ctx, tx, &metric)
+		default:
+			err = fmt.Errorf("unsupported metric type: %s", metric.MType)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("could not commit transaction: %w", err)
+	}
+
+	return metricList, nil
+}
+
 func (s *PostgreStorage) SaveMetric(ctx context.Context, metric *model.Metrics) (*model.Metrics, error) {
 	switch metric.MType {
 	case constants.CounterMetricType:
@@ -107,7 +142,6 @@ func (s *PostgreStorage) SaveMetric(ctx context.Context, metric *model.Metrics) 
 	default:
 		return nil, fmt.Errorf("unsupported metric type: %s", metric.MType)
 	}
-
 }
 
 func (s *PostgreStorage) saveCounterMetric(ctx context.Context, metric *model.Metrics) (*model.Metrics, error) {
@@ -116,11 +150,7 @@ func (s *PostgreStorage) saveCounterMetric(ctx context.Context, metric *model.Me
 		metric.Delta = &zero
 	}
 
-	var (
-		existingID    string
-		existingType  string
-		existingDelta sql.NullInt64
-	)
+	var existingDelta sql.NullInt64
 
 	tx, err := s.conn.Begin(ctx)
 	if err != nil {
@@ -137,7 +167,7 @@ func (s *PostgreStorage) saveCounterMetric(ctx context.Context, metric *model.Me
 		ctx,
 		sqlqueries.SelectMetricByID,
 		metric.ID).
-		Scan(&existingID, &existingType, &existingDelta)
+		Scan(new(string), new(string), &existingDelta, new(sql.NullFloat64))
 
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
@@ -165,9 +195,43 @@ func (s *PostgreStorage) saveCounterMetric(ctx context.Context, metric *model.Me
 	return metric, nil
 }
 
+func (s *PostgreStorage) saveCounterMetricTx(ctx context.Context, tx pgx.Tx, metric *model.Metrics) error {
+	if metric.Delta == nil {
+		zero := int64(0)
+		metric.Delta = &zero
+	}
+
+	var existingDelta sql.NullInt64
+	err := tx.QueryRow(
+		ctx,
+		sqlqueries.SelectMetricByID,
+		metric.ID,
+	).Scan(new(string), new(string), &existingDelta, new(sql.NullFloat64))
+
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("select counter metric failed: %w", err)
+	}
+
+	if existingDelta.Valid {
+		*metric.Delta += existingDelta.Int64
+	}
+
+	_, err = tx.Exec(ctx,
+		sqlqueries.InsertOrUpdateCounterMetric,
+		metric.ID,
+		metric.MType,
+		metric.Delta)
+	if err != nil {
+		return fmt.Errorf("insert/update counter metric failed: %w", err)
+	}
+
+	return nil
+}
+
 func (s *PostgreStorage) saveGaugeMetric(ctx context.Context, metric *model.Metrics) (*model.Metrics, error) {
 	if metric.Value == nil {
-		*metric.Value = float64(0)
+		zero := float64(0)
+		metric.Value = &zero
 	}
 
 	_, err := s.conn.Exec(ctx,
@@ -181,6 +245,25 @@ func (s *PostgreStorage) saveGaugeMetric(ctx context.Context, metric *model.Metr
 	}
 
 	return metric, nil
+}
+
+func (s *PostgreStorage) saveGaugeMetricTx(ctx context.Context, tx pgx.Tx, metric *model.Metrics) error {
+	if metric.Value == nil {
+		zero := float64(0)
+		metric.Value = &zero
+	}
+
+	_, err := tx.Exec(ctx,
+		sqlqueries.InsertOrUpdateGaugeMetric,
+		metric.ID,
+		metric.MType,
+		*metric.Value)
+
+	if err != nil {
+		return fmt.Errorf("insert/update gauge metric failed: %w", err)
+	}
+
+	return nil
 }
 
 func (s *PostgreStorage) HealthCheck(ctx context.Context) error {

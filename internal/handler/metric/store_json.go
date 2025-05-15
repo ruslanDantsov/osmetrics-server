@@ -7,6 +7,7 @@ import (
 	"github.com/ruslanDantsov/osmetrics-server/internal/constants"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -38,4 +39,50 @@ func (h *StoreMetricHandler) StoreJSON(ginContext *gin.Context) {
 	}
 
 	ginContext.Status(http.StatusOK)
+}
+
+func (h *StoreMetricHandler) StoreBatchJSON(ginContext *gin.Context) {
+	ctx := ginContext.Request.Context()
+	var metrics []model.Metrics
+	if err := ginContext.ShouldBindJSON(&metrics); err != nil {
+		h.Log.Error("Failed to parse metrics batch: " + err.Error())
+		ginContext.String(http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if len(metrics) == 0 {
+		ginContext.Status(http.StatusOK)
+		return
+	}
+
+	var metricsList []model.Metrics
+	for _, metric := range metrics {
+		var value string
+
+		switch metric.MType {
+		case constants.CounterMetricType:
+			value = strconv.FormatInt(*metric.Delta, 10)
+		case constants.GaugeMetricType:
+			value = strconv.FormatFloat(*metric.Value, 'f', -1, 64)
+		default:
+			continue
+		}
+
+		rawMmetric, err := model.NewMetricWithRawValues(metric.MType, string(metric.ID), value)
+		if err != nil {
+			ginContext.String(http.StatusBadRequest, "Error on model construction")
+			return
+		}
+
+		metricsList = append(metricsList, *rawMmetric)
+	}
+
+	_, err := h.Storage.SaveAllMetrics(ctx, metricsList)
+	if err != nil {
+		ginContext.String(http.StatusBadRequest, "Error on saving batch metrics")
+		return
+	}
+
+	ginContext.Status(http.StatusOK)
+
 }

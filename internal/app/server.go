@@ -32,6 +32,7 @@ type Storager interface {
 	GetKnownMetrics(ctx context.Context) []string
 	GetMetric(ctx context.Context, metricID enum.MetricID) (*model.Metrics, bool)
 	SaveMetric(ctx context.Context, metric *model.Metrics) (*model.Metrics, error)
+	SaveAllMetrics(ctx context.Context, metricList model.MetricsList) (model.MetricsList, error)
 	HealthCheck(ctx context.Context) error
 	Close()
 }
@@ -82,6 +83,7 @@ func (app *ServerApp) Run() error {
 	router.GET("/value/:type/:name", app.getMetricHandler.Get)
 	router.POST("/value", app.getMetricHandler.GetJSON)
 	router.POST("/update", app.storeMetricHandler.StoreJSON)
+	router.POST("/updates", app.storeMetricHandler.StoreBatchJSON)
 	router.POST("/update/:type/:name/:value", app.storeMetricHandler.Store)
 	router.Any(`/:path/`, app.commonHandler.ServeHTTP)
 

@@ -16,7 +16,7 @@ import (
 
 const (
 	UpdateMetricURL  = "http://%v/update"
-	UpdateMetricsURL = "http://%v/update"
+	UpdateMetricsURL = "http://%v/updates"
 )
 
 type RestClient interface {
@@ -157,6 +157,7 @@ func (ms *MetricService) SendMetrics() {
 }
 
 func (ms *MetricService) SendAllMetrics() {
+	ms.Log.Info("Sending batch of metrics...")
 	url := fmt.Sprintf(UpdateMetricsURL, ms.config.Address)
 	var metricList []model.Metrics
 
