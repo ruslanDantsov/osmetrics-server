@@ -15,7 +15,7 @@ type ServerConfig struct {
 	StoreIntervalInSeconds int           `short:"i" long:"interval" env:"STORE_INTERVAL" default:"300" description:"Interval in seconds for storing metrics to file"`
 	StoreInterval          time.Duration `long:"-" description:"Derived duration from ReportIntervalInSeconds"`
 	FileStoragePath        string        `short:"f" long:"path" env:"FILE_STORAGE_PATH" default:"" description:"Path to file with metrics data"`
-	Restore                bool          `short:"r" long:"restore" env:"RESTORE" description:"Flag indicating whether to load previously saved metrics data"`
+	Restore                bool          `short:"r" long:"restore" env:"RESTORE" description:"Flag indicating whether to load previously saved metrics data" no-ini:"false"`
 	DatabaseConnection     string        `short:"d" long:"database" env:"DATABASE_DSN" description:"Database connection string"`
 }
 
