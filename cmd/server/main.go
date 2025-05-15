@@ -25,7 +25,7 @@ func main() {
 
 	serverApp, err := app.NewServerApp(serverConfig, logger.Log)
 	if err != nil {
-		logger.Log.Fatal("Unable to create connection pool", zap.Error(err))
+		logger.Log.Fatal("Unable to config Server", zap.Error(err))
 	}
 
 	if err := serverApp.Run(); err != nil {

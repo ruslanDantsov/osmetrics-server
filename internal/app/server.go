@@ -1,13 +1,18 @@
 package app
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
+	"github.com/ruslanDantsov/osmetrics-server/internal/model"
+	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum"
+	"github.com/ruslanDantsov/osmetrics-server/internal/repository/file"
+	"github.com/ruslanDantsov/osmetrics-server/internal/repository/memory"
+	"github.com/ruslanDantsov/osmetrics-server/internal/repository/postgre"
 
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
 	"github.com/ruslanDantsov/osmetrics-server/internal/handler"
 	"github.com/ruslanDantsov/osmetrics-server/internal/handler/metric"
 	"github.com/ruslanDantsov/osmetrics-server/internal/middleware"
-	"github.com/ruslanDantsov/osmetrics-server/internal/repository"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -20,23 +25,37 @@ type ServerApp struct {
 	commonHandler      *handler.CommonHandler
 	healthHandler      *handler.HealthHandler
 	dbHealthHandler    *handler.DBHandler
-	db                 *repository.PostgreStorage
+	storage            Storager
+}
+
+type Storager interface {
+	GetKnownMetrics(ctx context.Context) []string
+	GetMetric(ctx context.Context, metricID enum.MetricID) (*model.Metrics, bool)
+	SaveMetric(ctx context.Context, metric *model.Metrics) (*model.Metrics, error)
+	HealthCheck(ctx context.Context) error
+	Close()
 }
 
 func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) (*ServerApp, error) {
+	var storage Storager
+	var err error
 
-	baseStorage := repository.NewMemStorage(*log)
-	persistentStorage := repository.NewPersistentStorage(baseStorage, cfg.FileStoragePath, cfg.StoreInterval, *log, cfg.Restore)
-	getMetricHandler := metric.NewGetMetricHandler(persistentStorage, *log)
-	storeMetricHandler := metric.NewStoreMetricHandler(persistentStorage, *log)
-	commonHandler := handler.NewCommonHandler(*log)
-	healthHandler := handler.NewHealthHandler(*log)
-	db, err := repository.NewPostgreStorage(*log, cfg.DatabaseConnection)
-	if err != nil {
-		return nil, err
+	if cfg.DatabaseConnection != "" {
+		storage, err = postgre.NewPostgreStorage(*log, cfg.DatabaseConnection)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		baseStorage := memory.NewMemStorage(*log)
+		storage = file.NewPersistentStorage(baseStorage, cfg.FileStoragePath, cfg.StoreInterval, *log, cfg.Restore)
 	}
 
-	dbHealthHandler := handler.NewDBHandler(*log, db)
+	getMetricHandler := metric.NewGetMetricHandler(storage, *log)
+	storeMetricHandler := metric.NewStoreMetricHandler(storage, *log)
+	commonHandler := handler.NewCommonHandler(*log)
+	healthHandler := handler.NewHealthHandler(*log)
+
+	dbHealthHandler := handler.NewDBHandler(*log, storage)
 
 	return &ServerApp{
 		config:             cfg,
@@ -46,7 +65,7 @@ func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) (*ServerApp, error)
 		commonHandler:      commonHandler,
 		healthHandler:      healthHandler,
 		dbHealthHandler:    dbHealthHandler,
-		db:                 db,
+		storage:            storage,
 	}, nil
 }
 
@@ -70,5 +89,5 @@ func (app *ServerApp) Run() error {
 }
 
 func (app *ServerApp) Close() {
-	app.db.Close()
+	app.storage.Close()
 }
