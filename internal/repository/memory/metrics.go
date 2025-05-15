@@ -27,7 +27,7 @@ func (s *MemStorage) HealthCheck(ctx context.Context) error {
 	return nil
 }
 
-func (ps *MemStorage) Close() {
+func (s *MemStorage) Close() {
 	//For this type of storage we don't need implementation
 }
 

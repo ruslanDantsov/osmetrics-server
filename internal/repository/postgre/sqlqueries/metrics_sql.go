@@ -11,7 +11,7 @@ const (
 		ON CONFLICT (id) DO UPDATE SET value = $3;
 	`
 
-	SelectMetricById = `
+	SelectMetricByID = `
 	SELECT id, type, delta, value FROM metrics
 	WHERE id = $1;
 `

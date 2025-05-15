@@ -48,7 +48,7 @@ func (s *PostgreStorage) GetMetric(ctx context.Context, metricID enum.MetricID) 
 
 	err := s.conn.QueryRow(
 		ctx,
-		sqlqueries.SelectMetricById,
+		sqlqueries.SelectMetricByID,
 		metricID).
 		Scan(&existingID, &existingType, &existingDelta, &existingValue)
 
@@ -56,10 +56,10 @@ func (s *PostgreStorage) GetMetric(ctx context.Context, metricID enum.MetricID) 
 		return nil, false
 	}
 
-	enumExistingId, _ := enum.ParseMetricID(existingID)
+	enumExistingID, _ := enum.ParseMetricID(existingID)
 
 	metric := &model.Metrics{
-		ID:    enumExistingId,
+		ID:    enumExistingID,
 		MType: existingType,
 	}
 
@@ -123,7 +123,7 @@ func (s *PostgreStorage) saveCounterMetric(ctx context.Context, metric *model.Me
 
 	err := s.conn.QueryRow(
 		ctx,
-		sqlqueries.SelectMetricById,
+		sqlqueries.SelectMetricByID,
 		metric.ID).
 		Scan(&existingID, &existingType, &existingDelta)
 
