@@ -112,7 +112,8 @@ func (s *PostgreStorage) SaveMetric(ctx context.Context, metric *model.Metrics) 
 
 func (s *PostgreStorage) saveCounterMetric(ctx context.Context, metric *model.Metrics) (*model.Metrics, error) {
 	if metric.Delta == nil {
-		*metric.Delta = 0
+		zero := int64(0)
+		metric.Delta = &zero
 	}
 
 	var (
@@ -121,7 +122,18 @@ func (s *PostgreStorage) saveCounterMetric(ctx context.Context, metric *model.Me
 		existingDelta sql.NullInt64
 	)
 
-	err := s.conn.QueryRow(
+	tx, err := s.conn.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("could not begin transaction: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			tx.Rollback(ctx)
+		}
+	}()
+
+	err = tx.QueryRow(
 		ctx,
 		sqlqueries.SelectMetricByID,
 		metric.ID).
@@ -136,7 +148,7 @@ func (s *PostgreStorage) saveCounterMetric(ctx context.Context, metric *model.Me
 
 	*metric.Delta += existingDelta.Int64
 
-	_, err = s.conn.Exec(ctx,
+	_, err = tx.Exec(ctx,
 		sqlqueries.InsertOrUpdateCounterMetric,
 		metric.ID,
 		metric.MType,
@@ -144,6 +156,10 @@ func (s *PostgreStorage) saveCounterMetric(ctx context.Context, metric *model.Me
 
 	if err != nil {
 		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("could not commit transaction: %w", err)
 	}
 
 	return metric, nil

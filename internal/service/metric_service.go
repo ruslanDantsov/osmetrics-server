@@ -14,6 +14,11 @@ import (
 	"sync"
 )
 
+const (
+	UpdateMetricURL  = "http://%v/update"
+	UpdateMetricsURL = "http://%v/update"
+)
+
 type RestClient interface {
 	R() *resty.Request
 }
@@ -94,7 +99,7 @@ func (ms *MetricService) aggregateMetric(metricType enum.MetricID, value int64) 
 }
 
 func (ms *MetricService) sendMetric(ID enum.MetricID, mType string, value interface{}) error {
-	url := fmt.Sprintf("http://%v/update", ms.config.Address)
+	url := fmt.Sprintf(UpdateMetricURL, ms.config.Address)
 
 	metric := model.Metrics{
 		ID:    ID,
@@ -148,5 +153,45 @@ func (ms *MetricService) SendMetrics() {
 		if err != nil {
 			ms.Log.Error(fmt.Sprintf("Failed to send metric %s: %v\n", metricID, err))
 		}
+	}
+}
+
+func (ms *MetricService) SendAllMetrics() {
+	url := fmt.Sprintf(UpdateMetricsURL, ms.config.Address)
+	var metricList []model.Metrics
+
+	for metricID, genericValue := range ms.Metrics {
+		metric := model.Metrics{
+			ID: metricID,
+		}
+
+		switch value := genericValue.(type) {
+		case float64:
+			metric.MType = constants.GaugeMetricType
+			metric.Value = &value
+		case int64:
+			metric.MType = constants.CounterMetricType
+			metric.Delta = &value
+			ms.Metrics[metricID] = int64(0)
+		}
+		metricList = append(metricList, metric)
+	}
+
+	json, err := model.MetricsList(metricList).MarshalJSON()
+	if err != nil {
+		ms.Log.Error("failed to marshal batch of metrics: %w", zap.Error(err))
+	}
+
+	resp, err := ms.Client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(json).
+		Post(url)
+
+	if err != nil {
+		ms.Log.Error("failed to send batch of metrics: %w", zap.Error(err))
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		ms.Log.Error(fmt.Sprintf("bad response for batch of metrics %v", resp.StatusCode()))
 	}
 }

@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const ServerHealthCheckURL = "http://%v/health"
+
 type AgentApp struct {
 	config        *config.AgentConfig
 	logger        *zap.Logger
@@ -58,7 +60,7 @@ func (app *AgentApp) Run() error {
 		defer ticker.Stop()
 
 		for range ticker.C {
-			app.metricService.SendMetrics()
+			app.metricService.SendAllMetrics()
 		}
 	}()
 
@@ -68,7 +70,7 @@ func (app *AgentApp) Run() error {
 }
 
 func (app *AgentApp) waitForServer() error {
-	url := fmt.Sprintf("http://%v/health", app.config.Address)
+	url := fmt.Sprintf(ServerHealthCheckURL, app.config.Address)
 
 	for attempt := 1; attempt <= app.config.MaxAttempts; attempt++ {
 		resp, err := app.client.R().Get(url)
