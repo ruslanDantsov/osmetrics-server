@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
@@ -185,7 +187,15 @@ func (s *PostgreStorage) saveCounterMetric(ctx context.Context, metric *model.Me
 		metric.Delta)
 
 	if err != nil {
-		return nil, err
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			switch pgErr.Code {
+			case pgerrcode.UniqueViolation:
+				return nil, fmt.Errorf("unique constraint violation when saving metric: %w", err)
+			default:
+				return nil, fmt.Errorf("postgresql error when saving metric (code %s): %w", pgErr.Code, err)
+			}
+		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -222,7 +232,15 @@ func (s *PostgreStorage) saveCounterMetricTx(ctx context.Context, tx pgx.Tx, met
 		metric.MType,
 		metric.Delta)
 	if err != nil {
-		return fmt.Errorf("insert/update counter metric failed: %w", err)
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			switch pgErr.Code {
+			case pgerrcode.UniqueViolation:
+				return fmt.Errorf("unique constraint violation when saving metric: %w", err)
+			default:
+				return fmt.Errorf("postgresql error when saving metric (code %s): %w", pgErr.Code, err)
+			}
+		}
 	}
 
 	return nil
@@ -241,7 +259,15 @@ func (s *PostgreStorage) saveGaugeMetric(ctx context.Context, metric *model.Metr
 		*metric.Value)
 
 	if err != nil {
-		return nil, err
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			switch pgErr.Code {
+			case pgerrcode.UniqueViolation:
+				return nil, fmt.Errorf("unique constraint violation when saving metric: %w", err)
+			default:
+				return nil, fmt.Errorf("postgresql error when saving metric (code %s): %w", pgErr.Code, err)
+			}
+		}
 	}
 
 	return metric, nil
@@ -260,7 +286,15 @@ func (s *PostgreStorage) saveGaugeMetricTx(ctx context.Context, tx pgx.Tx, metri
 		*metric.Value)
 
 	if err != nil {
-		return fmt.Errorf("insert/update gauge metric failed: %w", err)
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			switch pgErr.Code {
+			case pgerrcode.UniqueViolation:
+				return fmt.Errorf("unique constraint violation when saving metric: %w", err)
+			default:
+				return fmt.Errorf("postgresql error when saving metric (code %s): %w", pgErr.Code, err)
+			}
+		}
 	}
 
 	return nil
