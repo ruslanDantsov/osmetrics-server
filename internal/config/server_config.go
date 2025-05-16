@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -15,7 +16,9 @@ type ServerConfig struct {
 	StoreIntervalInSeconds int           `short:"i" long:"interval" env:"STORE_INTERVAL" default:"300" description:"Interval in seconds for storing metrics to file"`
 	StoreInterval          time.Duration `long:"-" description:"Derived duration from ReportIntervalInSeconds"`
 	FileStoragePath        string        `short:"f" long:"path" env:"FILE_STORAGE_PATH" default:"" description:"Path to file with metrics data"`
-	Restore                bool          `short:"r" long:"restore" env:"RESTORE" description:"Flag indicating whether to load previously saved metrics data"`
+	RestoreRaw             string        `short:"r" long:"restore" env:"RESTORE" description:"Flag indicating whether to load previously saved metrics data" no-ini:"true"`
+	Restore                bool          `ignored:"true"`
+	DatabaseConnection     string        `short:"d" long:"database" env:"DATABASE_DSN" description:"Database connection string"`
 }
 
 func NewServerConfig(cliArgs []string) (*ServerConfig, error) {
@@ -37,6 +40,14 @@ func NewServerConfig(cliArgs []string) (*ServerConfig, error) {
 	}
 
 	config.StoreInterval = time.Duration(config.StoreIntervalInSeconds) * time.Second
+
+	if config.RestoreRaw != "" {
+		val, err := strconv.ParseBool(config.RestoreRaw)
+		if err != nil {
+			return nil, fmt.Errorf("invalid value for --restore: %v", err)
+		}
+		config.Restore = val
+	}
 
 	return config, nil
 }

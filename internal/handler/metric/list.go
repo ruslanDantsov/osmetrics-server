@@ -1,17 +1,20 @@
 package metric
 
 import (
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 type KnownMetricsGetter interface {
-	GetKnownMetrics() []string
+	GetKnownMetrics(ctx context.Context) []string
 }
 
-func (h *GetMetricHandler) List(c *gin.Context) {
-	var metricNames = h.Storage.GetKnownMetrics()
+func (h *GetMetricHandler) List(ginContext *gin.Context) {
+	ctx := ginContext.Request.Context()
+
+	var metricNames = h.Storage.GetKnownMetrics(ctx)
 	htmlContent := "<html><head><title>Список метрик</title></head><body>"
 	htmlContent += "<h1>List of known metrics:</h1>"
 	htmlContent += "<ul>"
@@ -23,7 +26,7 @@ func (h *GetMetricHandler) List(c *gin.Context) {
 	htmlContent += "</ul>"
 	htmlContent += "</body></html>"
 
-	c.Header("Content-Type", "text/html")
-	c.Status(http.StatusOK)
-	c.Writer.Write([]byte(htmlContent))
+	ginContext.Header("Content-Type", "text/html")
+	ginContext.Status(http.StatusOK)
+	ginContext.Writer.Write([]byte(htmlContent))
 }

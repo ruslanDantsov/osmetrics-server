@@ -1,6 +1,7 @@
-package repository
+package memory
 
 import (
+	"context"
 	"fmt"
 	"github.com/ruslanDantsov/osmetrics-server/internal/constants"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model"
@@ -10,7 +11,7 @@ import (
 )
 
 type MemStorage struct {
-	mu      sync.RWMutex
+	Mu      sync.RWMutex
 	Storage map[string]*model.Metrics
 	Log     zap.Logger
 }
@@ -22,7 +23,15 @@ func NewMemStorage(log zap.Logger) *MemStorage {
 	}
 }
 
-func (s *MemStorage) GetKnownMetrics() []string {
+func (s *MemStorage) HealthCheck(ctx context.Context) error {
+	return nil
+}
+
+func (s *MemStorage) Close() {
+	//For this type of storage we don't need implementation
+}
+
+func (s *MemStorage) GetKnownMetrics(ctx context.Context) []string {
 	metricNames := make([]string, 0, len(s.Storage))
 	for name := range s.Storage {
 		metricNames = append(metricNames, name)
@@ -30,7 +39,7 @@ func (s *MemStorage) GetKnownMetrics() []string {
 	return metricNames
 }
 
-func (s *MemStorage) GetMetric(metricID enum.MetricID) (*model.Metrics, bool) {
+func (s *MemStorage) GetMetric(ctx context.Context, metricID enum.MetricID) (*model.Metrics, bool) {
 	if val, found := s.Storage[metricID.String()]; found {
 		if val.MType == constants.CounterMetricType {
 			s.Log.Info(fmt.Sprintf("Get metric name=%v type=%v delta=%v", val.ID, val.MType, *val.Delta))
@@ -45,9 +54,9 @@ func (s *MemStorage) GetMetric(metricID enum.MetricID) (*model.Metrics, bool) {
 	return nil, false
 }
 
-func (s *MemStorage) SaveMetric(metric *model.Metrics) (*model.Metrics, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *MemStorage) SaveMetric(ctx context.Context, metric *model.Metrics) (*model.Metrics, error) {
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
 
 	key := metric.ID.String()
 	existing, found := s.Storage[key]
@@ -71,4 +80,18 @@ func (s *MemStorage) SaveMetric(metric *model.Metrics) (*model.Metrics, error) {
 	}
 
 	return metric, nil
+}
+
+func (s *MemStorage) SaveAllMetrics(ctx context.Context, metricList model.MetricsList) (model.MetricsList, error) {
+	var savedMetrics model.MetricsList
+
+	for _, metric := range metricList {
+		savedMetric, err := s.SaveMetric(ctx, &metric)
+		if err != nil {
+			return nil, fmt.Errorf("failed to save metric %v: %w", metric.ID, err)
+		}
+		savedMetrics = append(savedMetrics, *savedMetric)
+	}
+
+	return savedMetrics, nil
 }

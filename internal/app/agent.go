@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
+	"github.com/ruslanDantsov/osmetrics-server/internal/constants"
 	"github.com/ruslanDantsov/osmetrics-server/internal/middleware"
 	"github.com/ruslanDantsov/osmetrics-server/internal/service"
 	"go.uber.org/zap"
@@ -11,6 +12,8 @@ import (
 	"sync"
 	"time"
 )
+
+const ServerHealthCheckURL = "http://%v/health"
 
 type AgentApp struct {
 	config        *config.AgentConfig
@@ -58,7 +61,7 @@ func (app *AgentApp) Run() error {
 		defer ticker.Stop()
 
 		for range ticker.C {
-			app.metricService.SendMetrics()
+			app.metricService.SendAllMetrics()
 		}
 	}()
 
@@ -68,9 +71,11 @@ func (app *AgentApp) Run() error {
 }
 
 func (app *AgentApp) waitForServer() error {
-	url := fmt.Sprintf("http://%v/health", app.config.Address)
+	url := fmt.Sprintf(ServerHealthCheckURL, app.config.Address)
 
-	for attempt := 1; attempt <= app.config.MaxAttempts; attempt++ {
+	sleepDelay := 1 * time.Second
+	attemps := 0
+	for {
 		resp, err := app.client.R().Get(url)
 
 		if err == nil && resp.StatusCode() == http.StatusOK {
@@ -79,9 +84,15 @@ func (app *AgentApp) waitForServer() error {
 		}
 
 		app.logger.Info("Server not ready, waiting...")
-		time.Sleep(2 * time.Second)
-		continue
+		time.Sleep(sleepDelay)
+
+		sleepDelay += constants.IncreaseDelayForWaitingServer
+		attemps++
+
+		if sleepDelay > constants.MaxDelayForWaitingServer {
+			break
+		}
 
 	}
-	return fmt.Errorf("server didn't become ready after %v attempts", app.config.MaxAttempts)
+	return fmt.Errorf("server didn't become ready after %v attempts", attemps)
 }
