@@ -33,3 +33,12 @@ func TestServerConfig_FromCommandLineArg(t *testing.T) {
 	assert.Equal(t, expectedAddress, config.Address)
 
 }
+
+func TestServerConfig_RestoreArgument_FromCommandLineArg(t *testing.T) {
+	expectedRestore := true
+
+	config, _ := NewServerConfig([]string{"-r=true"})
+
+	assert.Equal(t, expectedRestore, config.Restore)
+
+}
