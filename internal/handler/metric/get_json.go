@@ -11,6 +11,8 @@ import (
 )
 
 func (h *GetMetricHandler) GetJSON(ginContext *gin.Context) {
+	ctx := ginContext.Request.Context()
+
 	var metricRequest model.Metrics
 
 	if err := easyjson.UnmarshalFromReader(ginContext.Request.Body, &metricRequest); err != nil {
@@ -23,7 +25,7 @@ func (h *GetMetricHandler) GetJSON(ginContext *gin.Context) {
 		h.Log.Warn(fmt.Sprintf("Metric type=%v is unsupported", metricRequest.MType))
 	}
 
-	existingMetric, found := h.Storage.GetMetric(metricRequest.ID)
+	existingMetric, found := h.Storage.GetMetric(ctx, metricRequest.ID)
 	if !found {
 		h.Log.Warn(fmt.Sprintf("The metric ID=%v not found", metricRequest.ID))
 		ginContext.JSON(http.StatusNotFound, gin.H{"error": "Metric not found"})

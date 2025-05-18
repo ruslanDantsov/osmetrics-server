@@ -1,6 +1,7 @@
 package metric
 
 import (
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/ruslanDantsov/osmetrics-server/internal/constants"
@@ -12,8 +13,8 @@ import (
 )
 
 type MetricGetter interface {
-	GetMetric(metricID enum.MetricID) (*model.Metrics, bool)
-	GetKnownMetrics() []string
+	GetMetric(ctx context.Context, metricID enum.MetricID) (*model.Metrics, bool)
+	GetKnownMetrics(ctx context.Context) []string
 }
 
 type GetMetricHandler struct {
@@ -42,6 +43,8 @@ func (h *GetMetricHandler) Get(ginContext *gin.Context) {
 }
 
 func (h *GetMetricHandler) handleGetCounterMetric(ginContext *gin.Context) {
+	ctx := ginContext.Request.Context()
+
 	rawMetricID := ginContext.Param(constants.URLParamMetricName)
 
 	metricID, err := enum.ParseMetricID(rawMetricID)
@@ -51,7 +54,7 @@ func (h *GetMetricHandler) handleGetCounterMetric(ginContext *gin.Context) {
 		return
 	}
 
-	metricModel, found := h.Storage.GetMetric(metricID)
+	metricModel, found := h.Storage.GetMetric(ctx, metricID)
 
 	if !found {
 		h.Log.Warn(fmt.Sprintf("The counter_metric name=%v not found", metricID))
@@ -64,6 +67,8 @@ func (h *GetMetricHandler) handleGetCounterMetric(ginContext *gin.Context) {
 }
 
 func (h *GetMetricHandler) handleGetGaugeMetric(ginContext *gin.Context) {
+	ctx := ginContext.Request.Context()
+
 	rawMetricID := ginContext.Param(constants.URLParamMetricName)
 
 	metricID, err := enum.ParseMetricID(rawMetricID)
@@ -73,7 +78,7 @@ func (h *GetMetricHandler) handleGetGaugeMetric(ginContext *gin.Context) {
 		return
 	}
 
-	gaugeModel, found := h.Storage.GetMetric(metricID)
+	gaugeModel, found := h.Storage.GetMetric(ctx, metricID)
 
 	if !found {
 		h.Log.Warn(fmt.Sprintf("The gauge_metric name=%v not found", metricID))
