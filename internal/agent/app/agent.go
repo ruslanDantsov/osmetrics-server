@@ -25,7 +25,7 @@ func NewAgentApp(cfg *config.AgentConfig, log *zap.Logger) *AgentApp {
 	client := resty.New()
 	client.OnBeforeRequest(middleware2.GzipRestyMiddleware())
 	if len(cfg.HashKey) > 0 {
-		client.OnBeforeRequest(middleware2.HashBodyRestyMiddleware())
+		client.OnBeforeRequest(middleware2.HashBodyRestyMiddleware(cfg.HashKey))
 	}
 
 	metricService := service.NewMetricService(log, client, cfg)

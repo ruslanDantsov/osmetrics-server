@@ -2,11 +2,14 @@ package middleware
 
 import (
 	"bytes"
-	"compress/gzip"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"github.com/go-resty/resty/v2"
+	"github.com/ruslanDantsov/osmetrics-server/internal/agent/constants"
 )
 
-func HashBodyRestyMiddleware() func(c *resty.Client, req *resty.Request) error {
+func HashBodyRestyMiddleware(hashSecretKey string) func(c *resty.Client, req *resty.Request) error {
 	return func(c *resty.Client, req *resty.Request) error {
 		if req.Body == nil {
 			return nil
@@ -22,17 +25,12 @@ func HashBodyRestyMiddleware() func(c *resty.Client, req *resty.Request) error {
 			return nil
 		}
 
-		var buf bytes.Buffer
-		gz := gzip.NewWriter(&buf)
-		if _, err := gz.Write(bodyBytes); err != nil {
-			return err
-		}
-		if err := gz.Close(); err != nil {
-			return err
-		}
+		h := hmac.New(sha256.New, []byte(hashSecretKey))
+		h.Write(bodyBytes)
+		hash := hex.EncodeToString(h.Sum(nil))
 
-		req.SetBody(buf.Bytes())
-		req.SetHeader("Content-Encoding", "gzip")
+		req.SetHeader(constants.HashHeaderName, hash)
+		req.SetBody(bytes.NewReader(bodyBytes))
 
 		return nil
 	}
