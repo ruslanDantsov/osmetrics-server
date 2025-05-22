@@ -72,6 +72,7 @@ func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) (*ServerApp, error)
 
 func (app *ServerApp) Run() error {
 	router := gin.Default()
+	router.RedirectTrailingSlash = false
 
 	router.Use(middleware.NewLoggerRequestMiddleware(app.logger))
 	if len(app.cfg.HashKey) != 0 {
