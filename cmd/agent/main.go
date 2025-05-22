@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/ruslanDantsov/osmetrics-server/internal/app"
-	"github.com/ruslanDantsov/osmetrics-server/internal/config"
-	"github.com/ruslanDantsov/osmetrics-server/internal/logger"
+	"github.com/ruslanDantsov/osmetrics-server/internal/agent/app"
+	"github.com/ruslanDantsov/osmetrics-server/internal/agent/config"
+	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/logger"
 	"os"
 )
 
