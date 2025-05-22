@@ -50,6 +50,11 @@ func NewServerConfig(cliArgs []string) (*ServerConfig, error) {
 		config.Restore = val
 	}
 
+	//workaround for hashkey when on test set env variable and command line argument, and for this param priority of value should be from env
+	if keyFromEnv := os.Getenv("KEY"); keyFromEnv != "" {
+		config.HashKey = keyFromEnv
+	}
+
 	return config, nil
 }
 
