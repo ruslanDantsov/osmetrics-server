@@ -6,9 +6,9 @@ import (
 	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/model"
 	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/model/enum"
 	"github.com/ruslanDantsov/osmetrics-server/internal/server/config"
-	handler2 "github.com/ruslanDantsov/osmetrics-server/internal/server/handler"
-	metric2 "github.com/ruslanDantsov/osmetrics-server/internal/server/handler/metric"
-	middleware2 "github.com/ruslanDantsov/osmetrics-server/internal/server/middleware"
+	"github.com/ruslanDantsov/osmetrics-server/internal/server/handler"
+	"github.com/ruslanDantsov/osmetrics-server/internal/server/handler/metric"
+	"github.com/ruslanDantsov/osmetrics-server/internal/server/middleware"
 	"github.com/ruslanDantsov/osmetrics-server/internal/server/repository/file"
 	"github.com/ruslanDantsov/osmetrics-server/internal/server/repository/memory"
 	"github.com/ruslanDantsov/osmetrics-server/internal/server/repository/postgre"
@@ -18,13 +18,13 @@ import (
 )
 
 type ServerApp struct {
-	config             *config.ServerConfig
+	cfg                *config.ServerConfig
 	logger             *zap.Logger
-	getMetricHandler   *metric2.GetMetricHandler
-	storeMetricHandler *metric2.StoreMetricHandler
-	commonHandler      *handler2.CommonHandler
-	healthHandler      *handler2.HealthHandler
-	dbHealthHandler    *handler2.DBHandler
+	getMetricHandler   *metric.GetMetricHandler
+	storeMetricHandler *metric.StoreMetricHandler
+	commonHandler      *handler.CommonHandler
+	healthHandler      *handler.HealthHandler
+	dbHealthHandler    *handler.DBHandler
 	storage            Storager
 }
 
@@ -51,15 +51,15 @@ func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) (*ServerApp, error)
 		storage = file.NewPersistentStorage(baseStorage, cfg.FileStoragePath, cfg.StoreInterval, *log, cfg.Restore)
 	}
 
-	getMetricHandler := metric2.NewGetMetricHandler(storage, *log)
-	storeMetricHandler := metric2.NewStoreMetricHandler(storage, *log)
-	commonHandler := handler2.NewCommonHandler(*log)
-	healthHandler := handler2.NewHealthHandler(*log)
+	getMetricHandler := metric.NewGetMetricHandler(storage, *log)
+	storeMetricHandler := metric.NewStoreMetricHandler(storage, *log)
+	commonHandler := handler.NewCommonHandler(*log)
+	healthHandler := handler.NewHealthHandler(*log)
 
-	dbHealthHandler := handler2.NewDBHandler(*log, storage)
+	dbHealthHandler := handler.NewDBHandler(*log, storage)
 
 	return &ServerApp{
-		config:             cfg,
+		cfg:                cfg,
 		logger:             log,
 		getMetricHandler:   getMetricHandler,
 		storeMetricHandler: storeMetricHandler,
@@ -73,9 +73,12 @@ func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) (*ServerApp, error)
 func (app *ServerApp) Run() error {
 	router := gin.Default()
 
-	router.Use(middleware2.NewLoggerRequestMiddleware(app.logger))
-	router.Use(middleware2.NewGzipCompressionMiddleware())
-	router.Use(middleware2.NewGzipDecompressionMiddleware())
+	router.Use(middleware.NewLoggerRequestMiddleware(app.logger))
+	if len(app.cfg.HashKey) != 0 {
+		router.Use(middleware.HashCheckerMiddleware(app.cfg.HashKey, app.logger))
+	}
+	router.Use(middleware.NewGzipCompressionMiddleware())
+	router.Use(middleware.NewGzipDecompressionMiddleware())
 
 	router.GET(`/`, app.getMetricHandler.List)
 	router.GET("/health", app.healthHandler.GetHealth)
@@ -87,7 +90,7 @@ func (app *ServerApp) Run() error {
 	router.POST("/update/:type/:name/:value", app.storeMetricHandler.Store)
 	router.Any(`/:path/`, app.commonHandler.ServeHTTP)
 
-	return http.ListenAndServe(app.config.Address, router)
+	return http.ListenAndServe(app.cfg.Address, router)
 }
 
 func (app *ServerApp) Close() {

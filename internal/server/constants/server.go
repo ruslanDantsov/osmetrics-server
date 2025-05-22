@@ -6,4 +6,5 @@ const (
 	URLParamMetricValue = "value"
 	GaugeMetricType     = "gauge"
 	CounterMetricType   = "counter"
+	HashHeaderName      = "HashSHA256"
 )

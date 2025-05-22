@@ -19,6 +19,7 @@ type ServerConfig struct {
 	RestoreRaw             string        `short:"r" long:"restore" env:"RESTORE" description:"Flag indicating whether to load previously saved metrics data" no-ini:"true"`
 	Restore                bool          `ignored:"true"`
 	DatabaseConnection     string        `short:"d" long:"database" env:"DATABASE_DSN" description:"Database connection string"`
+	HashKey                string        `long:"key" short:"k" env:"KEY" description:"Secret key for hashing"`
 }
 
 func NewServerConfig(cliArgs []string) (*ServerConfig, error) {
