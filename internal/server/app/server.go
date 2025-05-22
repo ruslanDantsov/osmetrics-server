@@ -72,7 +72,6 @@ func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) (*ServerApp, error)
 
 func (app *ServerApp) Run() error {
 	router := gin.Default()
-	router.RedirectTrailingSlash = false
 
 	router.Use(middleware.NewLoggerRequestMiddleware(app.logger))
 	if len(app.cfg.HashKey) != 0 {
@@ -85,9 +84,9 @@ func (app *ServerApp) Run() error {
 	router.GET("/health", app.healthHandler.GetHealth)
 	router.GET("/ping", app.dbHealthHandler.GetDBHealth)
 	router.GET("/value/:type/:name", app.getMetricHandler.Get)
-	router.POST("/value", app.getMetricHandler.GetJSON)
-	router.POST("/update", app.storeMetricHandler.StoreJSON)
-	router.POST("/updates", app.storeMetricHandler.StoreBatchJSON)
+	router.POST("/value/", app.getMetricHandler.GetJSON)
+	router.POST("/update/", app.storeMetricHandler.StoreJSON)
+	router.POST("/updates/", app.storeMetricHandler.StoreBatchJSON)
 	router.POST("/update/:type/:name/:value", app.storeMetricHandler.Store)
 	router.Any(`/:path`, app.commonHandler.ServeHTTP)
 
