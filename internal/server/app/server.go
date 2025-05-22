@@ -88,7 +88,7 @@ func (app *ServerApp) Run() error {
 	router.POST("/update", app.storeMetricHandler.StoreJSON)
 	router.POST("/updates", app.storeMetricHandler.StoreBatchJSON)
 	router.POST("/update/:type/:name/:value", app.storeMetricHandler.Store)
-	router.Any(`/:path/`, app.commonHandler.ServeHTTP)
+	router.Any(`/:path`, app.commonHandler.ServeHTTP)
 
 	return http.ListenAndServe(app.cfg.Address, router)
 }
