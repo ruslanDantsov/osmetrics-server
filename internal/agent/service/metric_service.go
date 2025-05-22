@@ -161,6 +161,7 @@ func (ms *MetricService) SendAllMetrics() {
 	url := fmt.Sprintf(UpdateMetricsURL, ms.config.Address)
 	var metricList []model.Metrics
 
+	ms.mu.Lock()
 	for metricID, genericValue := range ms.Metrics {
 		metric := model.Metrics{
 			ID: metricID,
@@ -177,6 +178,7 @@ func (ms *MetricService) SendAllMetrics() {
 		}
 		metricList = append(metricList, metric)
 	}
+	ms.mu.Unlock()
 
 	json, err := model.MetricsList(metricList).MarshalJSON()
 	if err != nil {
