@@ -44,7 +44,6 @@ func (ms *MetricService) CollectMetrics(metricChan chan<- model.Metrics) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	// Define metrics to collect as map
 	metrics := map[enum.MetricID]float64{
 		enum.Alloc:         float64(memStats.Alloc),
 		enum.BuckHashSys:   float64(memStats.BuckHashSys),
@@ -100,7 +99,6 @@ func (ms *MetricService) CollectAdditionalMetrics(metricChan chan<- model.Metric
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	// Define metrics to collect as map
 	metrics := map[enum.MetricID]float64{
 		enum.FreeMemory:      float64(memInfo.Free),
 		enum.TotalMemory:     float64(memInfo.Total),
@@ -127,20 +125,6 @@ func (ms *MetricService) Worker(metricChan <-chan model.Metrics) {
 func (ms *MetricService) sendMetric(metric model.Metrics) error {
 	url := fmt.Sprintf(constants.UpdateMetricURL, ms.config.Address)
 
-	//SendingMetric := model.Metrics{
-	//	ID:    metric.ID,
-	//	MType: metric.MType,
-	//}
-	//
-	//switch metric.MType {
-	//case constants.GaugeMetricType:
-	//	v := value.(float64)
-	//	SendingMetric.Value = &v
-	//case constants.CounterMetricType:
-	//	v := value.(int64)
-	//	SendingMetric.Delta = &v
-	//}
-
 	json, err := metric.MarshalJSON()
 	if err != nil {
 		return fmt.Errorf("failed to marshal metric: %w", err)
@@ -161,26 +145,6 @@ func (ms *MetricService) sendMetric(metric model.Metrics) error {
 
 	return nil
 }
-
-//func (ms *MetricService) SendMetrics() {
-//	ms.Log.Info("Sending metrics...")
-//
-//	for metricID, genericValue := range ms.Metrics {
-//		var err error
-//		switch value := genericValue.(type) {
-//		case float64:
-//			err = ms.sendMetric(metricID, constants.GaugeMetricType, value)
-//		case int64:
-//			err = ms.sendMetric(metricID, constants.CounterMetricType, value)
-//			if err == nil {
-//				ms.Metrics[metricID] = int64(0)
-//			}
-//		}
-//		if err != nil {
-//			ms.Log.Error(fmt.Sprintf("Failed to send metric %s: %v\n", metricID, err))
-//		}
-//	}
-//}
 
 func (ms *MetricService) SendAllMetrics() {
 	ms.Log.Info("Sending batch of metrics...")
