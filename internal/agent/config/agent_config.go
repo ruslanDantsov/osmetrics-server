@@ -13,8 +13,9 @@ type AgentConfig struct {
 	PollIntervalInSeconds   int           `long:"poll" short:"p" env:"POLL_INTERVAL" default:"2" description:"Frequency (in seconds) for polling metrics from runtime"`
 	ReportInterval          time.Duration `long:"-" description:"Derived duration from ReportIntervalInSeconds"`
 	PollInterval            time.Duration `no:"-" description:"Derived duration from PollSeconds"`
-	LogLevel                string        `short:"l" long:"log" env:"LOG_LEVEL" default:"INFO" description:"Log Level"`
+	LogLevel                string        `short:"v" long:"log" env:"LOG_LEVEL" default:"INFO" description:"Log Level"`
 	HashKey                 string        `long:"key" short:"k" env:"KEY" description:"Secret key for hashing"`
+	RateLimit               int           `long:"rate" short:"l" env:"RATE_LIMIT" default:"2" description:"Count of workers for sending metrics to the server"`
 }
 
 func NewAgentConfig(cliArgs []string) *AgentConfig {

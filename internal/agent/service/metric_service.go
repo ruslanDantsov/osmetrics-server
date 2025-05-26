@@ -4,19 +4,16 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/agent/config"
+	"github.com/ruslanDantsov/osmetrics-server/internal/agent/constants"
 	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/model"
 	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/model/enum"
-	"github.com/ruslanDantsov/osmetrics-server/internal/server/constants"
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/mem"
 	"go.uber.org/zap"
 	"math/rand"
 	"net/http"
 	"runtime"
 	"sync"
-)
-
-const (
-	UpdateMetricURL  = "http://%v/update"
-	UpdateMetricsURL = "http://%v/updates"
 )
 
 type RestClient interface {
@@ -39,7 +36,7 @@ func NewMetricService(log *zap.Logger, client RestClient, agentConfig *config.Ag
 		Metrics: make(map[enum.MetricID]interface{}),
 	}
 }
-func (ms *MetricService) CollectMetrics() {
+func (ms *MetricService) CollectMetrics(metricChan chan<- model.Metrics) {
 	ms.Log.Info("Collecting metrics...")
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
@@ -80,40 +77,69 @@ func (ms *MetricService) CollectMetrics() {
 	}
 
 	for id, value := range metrics {
-		ms.appendMetric(id, value)
+		metricChan <- model.Metrics{
+			ID:    id,
+			MType: constants.GaugeMetricType,
+			Value: &value,
+		}
 	}
 
-	ms.aggregateMetric(enum.PollCount, 1)
-}
-
-func (ms *MetricService) appendMetric(metricType enum.MetricID, value float64) {
-	ms.Metrics[metricType] = value
-}
-
-func (ms *MetricService) aggregateMetric(metricType enum.MetricID, value int64) {
-	if existingMetric, found := ms.Metrics[metricType]; found {
-		ms.Metrics[metricType] = existingMetric.(int64) + value
-	} else {
-		ms.Metrics[metricType] = value
+	count := int64(1)
+	metricChan <- model.Metrics{
+		ID:    enum.PollCount,
+		MType: constants.CounterMetricType,
+		Delta: &count,
 	}
 }
 
-func (ms *MetricService) sendMetric(ID enum.MetricID, mType string, value interface{}) error {
-	url := fmt.Sprintf(UpdateMetricURL, ms.config.Address)
+func (ms *MetricService) CollectAdditionalMetrics(metricChan chan<- model.Metrics) {
+	ms.Log.Info("Collecting additional metrics...")
+	memInfo, _ := mem.VirtualMemory()
+	cpuCount, _ := cpu.Counts(false)
 
-	metric := model.Metrics{
-		ID:    ID,
-		MType: mType,
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
+
+	// Define metrics to collect as map
+	metrics := map[enum.MetricID]float64{
+		enum.FreeMemory:      float64(memInfo.Free),
+		enum.TotalMemory:     float64(memInfo.Total),
+		enum.CPUutilization1: float64(cpuCount),
 	}
 
-	switch mType {
-	case constants.GaugeMetricType:
-		v := value.(float64)
-		metric.Value = &v
-	case constants.CounterMetricType:
-		v := value.(int64)
-		metric.Delta = &v
+	for id, value := range metrics {
+		metricChan <- model.Metrics{
+			ID:    id,
+			MType: constants.GaugeMetricType,
+			Value: &value,
+		}
 	}
+}
+
+func (ms *MetricService) Worker(metricChan <-chan model.Metrics) {
+	for metric := range metricChan {
+		if err := ms.sendMetric(metric); err != nil {
+			ms.Log.Error("Failed to send metric", zap.String("id", string(metric.ID)), zap.Error(err))
+		}
+	}
+}
+
+func (ms *MetricService) sendMetric(metric model.Metrics) error {
+	url := fmt.Sprintf(constants.UpdateMetricURL, ms.config.Address)
+
+	//SendingMetric := model.Metrics{
+	//	ID:    metric.ID,
+	//	MType: metric.MType,
+	//}
+	//
+	//switch metric.MType {
+	//case constants.GaugeMetricType:
+	//	v := value.(float64)
+	//	SendingMetric.Value = &v
+	//case constants.CounterMetricType:
+	//	v := value.(int64)
+	//	SendingMetric.Delta = &v
+	//}
 
 	json, err := metric.MarshalJSON()
 	if err != nil {
@@ -130,35 +156,35 @@ func (ms *MetricService) sendMetric(ID enum.MetricID, mType string, value interf
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		return fmt.Errorf("bad response for metric %s: %v", ID, resp.StatusCode())
+		return fmt.Errorf("bad response for SendingMetric %s: %v", metric.ID, resp.StatusCode())
 	}
 
 	return nil
 }
 
-func (ms *MetricService) SendMetrics() {
-	ms.Log.Info("Sending metrics...")
-
-	for metricID, genericValue := range ms.Metrics {
-		var err error
-		switch value := genericValue.(type) {
-		case float64:
-			err = ms.sendMetric(metricID, constants.GaugeMetricType, value)
-		case int64:
-			err = ms.sendMetric(metricID, constants.CounterMetricType, value)
-			if err == nil {
-				ms.Metrics[metricID] = int64(0)
-			}
-		}
-		if err != nil {
-			ms.Log.Error(fmt.Sprintf("Failed to send metric %s: %v\n", metricID, err))
-		}
-	}
-}
+//func (ms *MetricService) SendMetrics() {
+//	ms.Log.Info("Sending metrics...")
+//
+//	for metricID, genericValue := range ms.Metrics {
+//		var err error
+//		switch value := genericValue.(type) {
+//		case float64:
+//			err = ms.sendMetric(metricID, constants.GaugeMetricType, value)
+//		case int64:
+//			err = ms.sendMetric(metricID, constants.CounterMetricType, value)
+//			if err == nil {
+//				ms.Metrics[metricID] = int64(0)
+//			}
+//		}
+//		if err != nil {
+//			ms.Log.Error(fmt.Sprintf("Failed to send metric %s: %v\n", metricID, err))
+//		}
+//	}
+//}
 
 func (ms *MetricService) SendAllMetrics() {
 	ms.Log.Info("Sending batch of metrics...")
-	url := fmt.Sprintf(UpdateMetricsURL, ms.config.Address)
+	url := fmt.Sprintf(constants.UpdateMetricsURL, ms.config.Address)
 	var metricList []model.Metrics
 
 	ms.mu.Lock()

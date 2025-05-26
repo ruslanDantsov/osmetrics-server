@@ -7,6 +7,7 @@ import (
 	"github.com/ruslanDantsov/osmetrics-server/internal/agent/constants"
 	middleware2 "github.com/ruslanDantsov/osmetrics-server/internal/agent/middleware"
 	"github.com/ruslanDantsov/osmetrics-server/internal/agent/service"
+	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/model"
 	"go.uber.org/zap"
 	"net/http"
 	"sync"
@@ -43,8 +44,10 @@ func (app *AgentApp) Run() error {
 		return err
 	}
 
+	metricChan := make(chan model.Metrics, constants.MetricChannelSize)
+
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
@@ -52,19 +55,28 @@ func (app *AgentApp) Run() error {
 		defer ticker.Stop()
 
 		for range ticker.C {
-			app.metricService.CollectMetrics()
+			app.metricService.CollectMetrics(metricChan)
 		}
 	}()
 
+	wg.Add(1)
 	go func() {
-		wg.Done()
-		ticker := time.NewTicker(app.config.ReportInterval)
+		defer wg.Done()
+		ticker := time.NewTicker(app.config.PollInterval)
 		defer ticker.Stop()
 
 		for range ticker.C {
-			app.metricService.SendAllMetrics()
+			app.metricService.CollectAdditionalMetrics(metricChan)
 		}
 	}()
+
+	for i := 0; i < app.config.RateLimit; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			app.metricService.Worker(metricChan)
+		}()
+	}
 
 	wg.Wait()
 
