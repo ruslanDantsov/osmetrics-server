@@ -46,6 +46,7 @@ func (app *AgentApp) Run() error {
 
 	metricChan := make(chan model.Metrics, constants.MetricChannelSize)
 
+	var doneChan = make(chan struct{})
 	var wg sync.WaitGroup
 	wg.Add(1)
 
@@ -55,7 +56,7 @@ func (app *AgentApp) Run() error {
 		defer ticker.Stop()
 
 		for range ticker.C {
-			app.metricService.CollectMetrics(metricChan)
+			app.metricService.CollectMetrics(metricChan, doneChan)
 		}
 	}()
 
@@ -66,7 +67,7 @@ func (app *AgentApp) Run() error {
 		defer ticker.Stop()
 
 		for range ticker.C {
-			app.metricService.CollectAdditionalMetrics(metricChan)
+			app.metricService.CollectAdditionalMetrics(metricChan, doneChan)
 		}
 	}()
 
@@ -74,9 +75,14 @@ func (app *AgentApp) Run() error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			app.metricService.Worker(metricChan)
+			app.metricService.Worker(metricChan, doneChan)
 		}()
 	}
+
+	<-doneChan
+	app.metricService.Log.Info("Shutting down, waiting for workers to finish...")
+
+	close(metricChan)
 
 	wg.Wait()
 

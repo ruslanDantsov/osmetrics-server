@@ -36,7 +36,7 @@ func NewMetricService(log *zap.Logger, client RestClient, agentConfig *config.Ag
 		Metrics: make(map[enum.MetricID]interface{}),
 	}
 }
-func (ms *MetricService) CollectMetrics(metricChan chan<- model.Metrics) {
+func (ms *MetricService) CollectMetrics(metricChan chan<- model.Metrics, doneChan <-chan struct{}) {
 	ms.Log.Info("Collecting metrics...")
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
@@ -76,10 +76,15 @@ func (ms *MetricService) CollectMetrics(metricChan chan<- model.Metrics) {
 	}
 
 	for id, value := range metrics {
-		metricChan <- model.Metrics{
+		select {
+		case <-doneChan:
+			ms.Log.Info("Stopping additional metrics collection due to shutdown")
+			return
+		case metricChan <- model.Metrics{
 			ID:    id,
 			MType: constants.GaugeMetricType,
 			Value: &value,
+		}:
 		}
 	}
 
@@ -91,7 +96,7 @@ func (ms *MetricService) CollectMetrics(metricChan chan<- model.Metrics) {
 	}
 }
 
-func (ms *MetricService) CollectAdditionalMetrics(metricChan chan<- model.Metrics) {
+func (ms *MetricService) CollectAdditionalMetrics(metricChan chan<- model.Metrics, doneChan <-chan struct{}) {
 	ms.Log.Info("Collecting additional metrics...")
 	memInfo, _ := mem.VirtualMemory()
 	cpuCount, _ := cpu.Counts(false)
@@ -106,18 +111,35 @@ func (ms *MetricService) CollectAdditionalMetrics(metricChan chan<- model.Metric
 	}
 
 	for id, value := range metrics {
-		metricChan <- model.Metrics{
+		select {
+		case <-doneChan:
+			ms.Log.Info("Stopping additional metrics collection due to shutdown")
+			return
+		case metricChan <- model.Metrics{
 			ID:    id,
 			MType: constants.GaugeMetricType,
 			Value: &value,
+		}:
 		}
+
 	}
 }
 
-func (ms *MetricService) Worker(metricChan <-chan model.Metrics) {
-	for metric := range metricChan {
-		if err := ms.sendMetric(metric); err != nil {
-			ms.Log.Error("Failed to send metric", zap.String("id", string(metric.ID)), zap.Error(err))
+func (ms *MetricService) Worker(metricChan <-chan model.Metrics, doneChan <-chan struct{}) {
+	for {
+		select {
+		case <-doneChan:
+			ms.Log.Info("Worker received shutdown signal")
+			return
+		case metric, ok := <-metricChan:
+			if !ok {
+				ms.Log.Info("Metric channel closed, worker exiting")
+				return
+			}
+
+			if err := ms.sendMetric(metric); err != nil {
+				ms.Log.Error("Failed to send metric", zap.String("id", string(metric.ID)), zap.Error(err))
+			}
 		}
 	}
 }
