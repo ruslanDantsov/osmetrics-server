@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/agent/config"
@@ -36,7 +37,7 @@ func NewMetricService(log *zap.Logger, client RestClient, agentConfig *config.Ag
 		Metrics: make(map[enum.MetricID]interface{}),
 	}
 }
-func (ms *MetricService) CollectMetrics(metricChan chan<- model.Metrics, doneChan <-chan struct{}) {
+func (ms *MetricService) CollectMetrics(metricChan chan<- model.Metrics) {
 	ms.Log.Info("Collecting metrics...")
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
@@ -76,15 +77,10 @@ func (ms *MetricService) CollectMetrics(metricChan chan<- model.Metrics, doneCha
 	}
 
 	for id, value := range metrics {
-		select {
-		case <-doneChan:
-			ms.Log.Info("Stopping additional metrics collection due to shutdown")
-			return
-		case metricChan <- model.Metrics{
+		metricChan <- model.Metrics{
 			ID:    id,
 			MType: constants.GaugeMetricType,
 			Value: &value,
-		}:
 		}
 	}
 
@@ -96,7 +92,7 @@ func (ms *MetricService) CollectMetrics(metricChan chan<- model.Metrics, doneCha
 	}
 }
 
-func (ms *MetricService) CollectAdditionalMetrics(metricChan chan<- model.Metrics, doneChan <-chan struct{}) {
+func (ms *MetricService) CollectAdditionalMetrics(metricChan chan<- model.Metrics) {
 	ms.Log.Info("Collecting additional metrics...")
 	memInfo, _ := mem.VirtualMemory()
 	cpuCount, _ := cpu.Counts(false)
@@ -111,24 +107,18 @@ func (ms *MetricService) CollectAdditionalMetrics(metricChan chan<- model.Metric
 	}
 
 	for id, value := range metrics {
-		select {
-		case <-doneChan:
-			ms.Log.Info("Stopping additional metrics collection due to shutdown")
-			return
-		case metricChan <- model.Metrics{
+		metricChan <- model.Metrics{
 			ID:    id,
 			MType: constants.GaugeMetricType,
 			Value: &value,
-		}:
 		}
-
 	}
 }
 
-func (ms *MetricService) Worker(metricChan <-chan model.Metrics, doneChan <-chan struct{}) {
+func (ms *MetricService) Worker(ctx context.Context, metricChan chan model.Metrics) {
 	for {
 		select {
-		case <-doneChan:
+		case <-ctx.Done():
 			ms.Log.Info("Worker received shutdown signal")
 			return
 		case metric, ok := <-metricChan:
@@ -137,14 +127,14 @@ func (ms *MetricService) Worker(metricChan <-chan model.Metrics, doneChan <-chan
 				return
 			}
 
-			if err := ms.sendMetric(metric); err != nil {
+			if err := ms.sendMetric(ctx, metric); err != nil {
 				ms.Log.Error("Failed to send metric", zap.String("id", string(metric.ID)), zap.Error(err))
 			}
 		}
 	}
 }
 
-func (ms *MetricService) sendMetric(metric model.Metrics) error {
+func (ms *MetricService) sendMetric(ctx context.Context, metric model.Metrics) error {
 	url := fmt.Sprintf(constants.UpdateMetricURL, ms.config.Address)
 
 	json, err := metric.MarshalJSON()
@@ -155,6 +145,7 @@ func (ms *MetricService) sendMetric(metric model.Metrics) error {
 	resp, err := ms.Client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(json).
+		SetContext(ctx).
 		Post(url)
 
 	if err != nil {
