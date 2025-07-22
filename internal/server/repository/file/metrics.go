@@ -11,8 +11,17 @@ import (
 	"time"
 )
 
+type MemoryStorager interface {
+	GetKnownMetrics(ctx context.Context) []string
+	GetMetric(ctx context.Context, metricID enum.MetricID) (*model.Metrics, bool)
+	SaveMetric(ctx context.Context, metric *model.Metrics) (*model.Metrics, error)
+	SaveAllMetrics(ctx context.Context, metricList model.MetricsList) (model.MetricsList, error)
+	HealthCheck(ctx context.Context) error
+	Close()
+}
+
 type PersistentStorage struct {
-	base          *memory.MemStorage
+	base          MemoryStorager
 	filePath      string
 	logger        zap.Logger
 	ticker        *time.Ticker
@@ -21,7 +30,7 @@ type PersistentStorage struct {
 	isRestore     bool
 }
 
-func NewPersistentStorage(base *memory.MemStorage, filePath string, storeInterval time.Duration, logger zap.Logger, isRestore bool) *PersistentStorage {
+func NewPersistentStorage(base MemoryStorager, filePath string, storeInterval time.Duration, logger zap.Logger, isRestore bool) *PersistentStorage {
 	ps := &PersistentStorage{
 		base:          base,
 		filePath:      filePath,
@@ -106,8 +115,14 @@ func (ps *PersistentStorage) GetKnownMetrics(ctx context.Context) []string {
 }
 
 func (ps *PersistentStorage) saveToFile() {
-	ps.base.Mu.RLock()
-	defer ps.base.Mu.RUnlock()
+	memStorage, ok := ps.base.(*memory.MemStorage)
+	if !ok {
+		ps.logger.Error("saveToFile: base is not MemStorage, skipping file save")
+		return
+	}
+
+	memStorage.Mu.RLock()
+	defer memStorage.Mu.RUnlock()
 
 	file, err := os.Create(ps.filePath)
 	if err != nil {
@@ -116,13 +131,19 @@ func (ps *PersistentStorage) saveToFile() {
 	}
 	defer file.Close()
 
-	if err := json.NewEncoder(file).Encode(ps.base.Storage); err != nil {
+	if err := json.NewEncoder(file).Encode(memStorage.Storage); err != nil {
 		ps.logger.Error("Failed to encode metrics", zap.Error(err))
 	}
 	ps.logger.Info("Metrics data have been stored")
 }
 
 func (ps *PersistentStorage) loadFromFile() {
+	memStorage, ok := ps.base.(*memory.MemStorage)
+	if !ok {
+		ps.logger.Error("loadFromFile: base is not MemStorage, skipping file load")
+		return
+	}
+
 	file, err := os.Open(ps.filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -140,8 +161,8 @@ func (ps *PersistentStorage) loadFromFile() {
 		return
 	}
 
-	ps.base.Mu.Lock()
-	defer ps.base.Mu.Unlock()
-	ps.base.Storage = data
+	memStorage.Mu.Lock()
+	defer memStorage.Mu.Unlock()
+	memStorage.Storage = data
 	ps.logger.Info("Metrics restored from file", zap.Int("count", len(data)))
 }
