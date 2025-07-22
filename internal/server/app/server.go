@@ -13,7 +13,6 @@ import (
 	"github.com/ruslanDantsov/osmetrics-server/internal/server/repository/memory"
 	"github.com/ruslanDantsov/osmetrics-server/internal/server/repository/postgre"
 	"net/http/pprof"
-	_ "net/http/pprof"
 
 	"go.uber.org/zap"
 	"net/http"
