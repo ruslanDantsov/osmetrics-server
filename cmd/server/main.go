@@ -20,7 +20,6 @@ func main() {
 	}
 
 	defer logger.Log.Sync()
-	defer logger.Log.Sync()
 
 	logger.Log.Info("Starting server...")
 

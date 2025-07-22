@@ -12,6 +12,8 @@ import (
 	"github.com/ruslanDantsov/osmetrics-server/internal/server/repository/file"
 	"github.com/ruslanDantsov/osmetrics-server/internal/server/repository/memory"
 	"github.com/ruslanDantsov/osmetrics-server/internal/server/repository/postgre"
+	"net/http/pprof"
+	_ "net/http/pprof"
 
 	"go.uber.org/zap"
 	"net/http"
@@ -89,6 +91,20 @@ func (app *ServerApp) Run() error {
 	router.POST("/updates/", app.storeMetricHandler.StoreBatchJSON)
 	router.POST("/update/:type/:name/:value", app.storeMetricHandler.Store)
 	router.Any(`/:path`, app.commonHandler.ServeHTTP)
+
+	pprofGroup := router.Group("/debug/pprof")
+	{
+		pprofGroup.GET("/", gin.WrapH(http.HandlerFunc(pprof.Index)))
+		pprofGroup.GET("/cmdline", gin.WrapH(http.HandlerFunc(pprof.Cmdline)))
+		pprofGroup.GET("/profile", gin.WrapH(http.HandlerFunc(pprof.Profile)))
+		pprofGroup.GET("/symbol", gin.WrapH(http.HandlerFunc(pprof.Symbol)))
+		pprofGroup.GET("/trace", gin.WrapH(http.HandlerFunc(pprof.Trace)))
+		pprofGroup.GET("/heap", gin.WrapH(http.HandlerFunc(pprof.Handler("heap").ServeHTTP)))
+		pprofGroup.GET("/goroutine", gin.WrapH(http.HandlerFunc(pprof.Handler("goroutine").ServeHTTP)))
+		pprofGroup.GET("/threadcreate", gin.WrapH(http.HandlerFunc(pprof.Handler("threadcreate").ServeHTTP)))
+		pprofGroup.GET("/block", gin.WrapH(http.HandlerFunc(pprof.Handler("block").ServeHTTP)))
+		pprofGroup.GET("/mutex", gin.WrapH(http.HandlerFunc(pprof.Handler("mutex").ServeHTTP)))
+	}
 
 	return http.ListenAndServe(app.cfg.Address, router)
 }
