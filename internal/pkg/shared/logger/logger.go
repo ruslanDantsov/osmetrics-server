@@ -17,7 +17,7 @@ func Initialized(level string) error {
 	cfg := zap.NewProductionConfig()
 	cfg.Level = lvl
 	withCustomTimeLayout("2006-01-02 15:04:05")(&cfg)
-	WithServiceName("Server app")(&cfg)
+	withServiceName("Server app")(&cfg)
 
 	configuredLogger, err := cfg.Build()
 	if err != nil {
@@ -38,7 +38,7 @@ func withCustomTimeLayout(layout string) LoggerOption {
 	}
 }
 
-func WithServiceName(name string) LoggerOption {
+func withServiceName(name string) LoggerOption {
 	return func(cfg *zap.Config) {
 		cfg.InitialFields = map[string]interface{}{
 			"service": name,
