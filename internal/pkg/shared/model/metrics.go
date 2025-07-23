@@ -9,16 +9,20 @@ import (
 
 //go:generate easyjson -all Metrics.go
 
+// Metrics структура, которая может быть либо счетчиком (Counter), либо измеряемым значением (Gauge).
 type Metrics struct {
-	ID    enum.MetricID `json:"id"`
-	MType string        `json:"type"`
-	Delta *int64        `json:"delta,omitempty"`
-	Value *float64      `json:"value,omitempty"`
+	ID    enum.MetricID `json:"id"`              // Уникальный идентификатор метрики
+	MType string        `json:"type"`            // Тип метрики: "gauge" или "counter"
+	Delta *int64        `json:"delta,omitempty"` // Значение для счетчика (Counter); применяется, если тип метрики — "counter"
+	Value *float64      `json:"value,omitempty"` // Значение для измеряемой метрики (Gauge); применяется, если тип метрики — "gauge"
 }
 
+// MetricsList представляет собой список метрик.
+//
 //easyjson:json
 type MetricsList []Metrics
 
+// NewMetricWithRawValues создает новую метрику из строковых представлений типа, идентификатора и значения.
 func NewMetricWithRawValues(metricType string, metricIDRaw string, valueRaw string) (*Metrics, error) {
 	metricID, err := enum.ParseMetricID(metricIDRaw)
 	if err != nil {
