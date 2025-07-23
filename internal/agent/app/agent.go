@@ -15,6 +15,8 @@ import (
 	"time"
 )
 
+// AgentApp представляет основное приложение агента, которое отвечает за сбор и передачу метрик.
+// AgentApp хранить информацию для запуска агента
 type AgentApp struct {
 	config        *config.AgentConfig
 	logger        *zap.Logger
@@ -22,6 +24,7 @@ type AgentApp struct {
 	metricService *service.MetricService
 }
 
+// NewAgentApp создает новый экземпляр AgentApp с заданной конфигурацией и логгером.
 func NewAgentApp(cfg *config.AgentConfig, log *zap.Logger) *AgentApp {
 
 	client := resty.New()
@@ -40,6 +43,10 @@ func NewAgentApp(cfg *config.AgentConfig, log *zap.Logger) *AgentApp {
 	}
 }
 
+// Run запускает агент: собирает метрики, отправляет их и управляет жизненным циклом воркеров.
+//
+// Ожидает готовности сервера перед запуском сбора метрик.
+// Использует контекст для управления завершением работы.
 func (app *AgentApp) Run(ctx context.Context) error {
 	if err := app.waitForServer(); err != nil {
 		return err
