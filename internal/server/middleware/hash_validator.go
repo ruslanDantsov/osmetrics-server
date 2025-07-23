@@ -12,6 +12,18 @@ import (
 	"net/http"
 )
 
+// HashCheckerMiddleware возвращает middleware для Gin, который проверяет
+// HMAC SHA-256 подпись тела запроса.
+//
+// Middleware игнорирует GET-запросы по пути "/health".
+//
+// Для остальных запросов:
+// - Считывает тело запроса.
+// - Вычисляет HMAC SHA-256 с использованием ключа hashSecretKey.
+// - Сравнивает вычисленную подпись с подписью, переданной в заголовке запроса (constants.HashHeaderName).
+// - Если подписи не совпадают, возвращает ошибку 400 Bad Request и прекращает обработку.
+// - В случае ошибки чтения тела запроса — возвращает 500 Internal Server Error.
+// - При успешной проверке устанавливает в ответ заголовок с корректной подписью.
 func HashCheckerMiddleware(hashSecretKey string, logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.Request.Method == "GET" && c.Request.URL.Path == "/health" {

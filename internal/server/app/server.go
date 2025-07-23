@@ -18,6 +18,8 @@ import (
 	"net/http"
 )
 
+// ServerApp представляет основное приложение сервера.
+// Оно хранит конфигурацию, логгер, хендлеры и хранилище данных.
 type ServerApp struct {
 	cfg                *config.ServerConfig
 	logger             *zap.Logger
@@ -29,6 +31,7 @@ type ServerApp struct {
 	storage            Storager
 }
 
+// Storager определяет интерфейс для взаимодействия с хранилищем метрик.
 type Storager interface {
 	GetKnownMetrics(ctx context.Context) []string
 	GetMetric(ctx context.Context, metricID enum.MetricID) (*model.Metrics, bool)
@@ -38,6 +41,7 @@ type Storager interface {
 	Close()
 }
 
+// NewServerApp создаёт и инициализирует экземпляр ServerApp.
 func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) (*ServerApp, error) {
 	var storage Storager
 	var err error
@@ -71,6 +75,8 @@ func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) (*ServerApp, error)
 	}, nil
 }
 
+// Run запускает HTTP-сервер и регистрирует все маршруты,
+// настраивает middleware и маршруты профилирования pprof.
 func (app *ServerApp) Run() error {
 	router := gin.Default()
 
@@ -108,6 +114,7 @@ func (app *ServerApp) Run() error {
 	return http.ListenAndServe(app.cfg.Address, router)
 }
 
+// Close завершает работу приложения.
 func (app *ServerApp) Close() {
 	app.storage.Close()
 }

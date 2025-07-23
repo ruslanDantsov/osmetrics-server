@@ -7,15 +7,18 @@ import (
 	"net/http"
 )
 
+// StorageHealthChecker описывает интерфейс для проверки состояния хранилища (базы данных).
 type StorageHealthChecker interface {
 	HealthCheck(ctx context.Context) error
 }
 
+// DBHandler обрабатывает HTTP-запросы, связанные с проверкой состояния базы данных.
 type DBHandler struct {
 	Log zap.Logger
 	db  StorageHealthChecker
 }
 
+// NewDBHandler создает новый экземпляр DBHandler.
 func NewDBHandler(log zap.Logger, db StorageHealthChecker) *DBHandler {
 	return &DBHandler{
 		Log: log,
@@ -23,6 +26,8 @@ func NewDBHandler(log zap.Logger, db StorageHealthChecker) *DBHandler {
 	}
 }
 
+// GetDBHealth обрабатывает HTTP-запрос проверки здоровья базы данных.
+// В случае ошибки возвращает HTTP 500, иначе HTTP 200 с соответствующим сообщением.
 func (h *DBHandler) GetDBHealth(ginContext *gin.Context) {
 	ctx := ginContext.Request.Context()
 	if err := h.db.HealthCheck(ctx); err != nil {

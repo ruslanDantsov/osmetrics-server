@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// NewGzipCompressionMiddleware возвращает middleware для сжатия HTTP-ответов в формате gzip.
 func NewGzipCompressionMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		acceptEncoding := c.GetHeader("Accept-Encoding")
@@ -33,15 +34,19 @@ func NewGzipCompressionMiddleware() gin.HandlerFunc {
 	}
 }
 
+// gzipResponseWriter оборачивает gin.ResponseWriter и реализует запись
+// данных в сжатом формате gzip через io.Writer.
 type gzipResponseWriter struct {
 	gin.ResponseWriter
 	Writer io.Writer
 }
 
+// Write записывает сжатые байты данных в поток ответа.
 func (w *gzipResponseWriter) Write(data []byte) (int, error) {
 	return w.Writer.Write(data)
 }
 
+// WriteString записывает сжатую строку в поток ответа.
 func (w *gzipResponseWriter) WriteString(s string) (int, error) {
 	return w.Writer.Write([]byte(s))
 }

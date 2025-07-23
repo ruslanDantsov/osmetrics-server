@@ -18,11 +18,13 @@ import (
 	"go.uber.org/zap"
 )
 
+// PostgreStorage представляет реализацию хранилища метрик на базе PostgreSQL.
 type PostgreStorage struct {
 	conn *pgxpool.Pool
 	Log  zap.Logger
 }
 
+// NewPostgreStorage создает новый экземпляр PostgreStorage.
 func NewPostgreStorage(log zap.Logger, connectionString string) (*PostgreStorage, error) {
 	if err := applyMigrations(connectionString); err != nil {
 		return nil, err
@@ -41,6 +43,7 @@ func NewPostgreStorage(log zap.Logger, connectionString string) (*PostgreStorage
 
 }
 
+// GetMetric возвращает метрику по её идентификатору.
 func (s *PostgreStorage) GetMetric(ctx context.Context, metricID enum.MetricID) (*model.Metrics, bool) {
 	var (
 		existingID    string
@@ -78,6 +81,8 @@ func (s *PostgreStorage) GetMetric(ctx context.Context, metricID enum.MetricID) 
 	return metric, true
 }
 
+// GetKnownMetrics возвращает список всех известных идентификаторов метрик,
+// хранящихся в базе данных.
 func (s *PostgreStorage) GetKnownMetrics(ctx context.Context) []string {
 	var metricNames []string
 
@@ -101,6 +106,7 @@ func (s *PostgreStorage) GetKnownMetrics(ctx context.Context) []string {
 
 }
 
+// SaveAllMetrics сохраняет список метрик в базу данных
 func (s *PostgreStorage) SaveAllMetrics(ctx context.Context, metricList model.MetricsList) (model.MetricsList, error) {
 	tx, err := s.conn.Begin(ctx)
 	if err != nil {
@@ -135,6 +141,7 @@ func (s *PostgreStorage) SaveAllMetrics(ctx context.Context, metricList model.Me
 	return metricList, nil
 }
 
+// SaveMetric сохраняет одну метрику в базу данных.
 func (s *PostgreStorage) SaveMetric(ctx context.Context, metric *model.Metrics) (*model.Metrics, error) {
 	switch metric.MType {
 	case constants.CounterMetricType:
@@ -300,6 +307,7 @@ func (s *PostgreStorage) saveGaugeMetricTx(ctx context.Context, tx pgx.Tx, metri
 	return nil
 }
 
+// HealthCheck проверяет доступность базы данных.
 func (s *PostgreStorage) HealthCheck(ctx context.Context) error {
 
 	if err := s.conn.Ping(ctx); err != nil {
@@ -311,6 +319,7 @@ func (s *PostgreStorage) HealthCheck(ctx context.Context) error {
 	return nil
 }
 
+// Close закрывает соединение с базой данных, если оно было установлено.
 func (s *PostgreStorage) Close() {
 	if s.conn != nil {
 		s.conn.Close()

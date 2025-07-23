@@ -8,6 +8,9 @@ import (
 	"strings"
 )
 
+// NewGzipDecompressionMiddleware возвращает middleware для Gin,
+// который автоматически распаковывает тело запроса, если оно
+// сжато с помощью gzip.
 func NewGzipDecompressionMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		contentEncoding := c.GetHeader("Content-Encoding")
