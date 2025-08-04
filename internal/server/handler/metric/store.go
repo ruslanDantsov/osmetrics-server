@@ -11,16 +11,19 @@ import (
 	"strings"
 )
 
+// MetricSaver предоставляет интерфейс для сохранения метрик.
 type MetricSaver interface {
 	SaveMetric(ctx context.Context, m *model.Metrics) (*model.Metrics, error)
 	SaveAllMetrics(ctx context.Context, metricList model.MetricsList) (model.MetricsList, error)
 }
 
+// StoreMetricHandler обрабатывает HTTP-запросы на сохранение метрик.
 type StoreMetricHandler struct {
 	Storage MetricSaver
 	Log     zap.Logger
 }
 
+// NewStoreMetricHandler создаёт новый экземпляр StoreMetricHandler.
 func NewStoreMetricHandler(storage MetricSaver, log zap.Logger) *StoreMetricHandler {
 	return &StoreMetricHandler{
 		Storage: storage,
@@ -28,6 +31,10 @@ func NewStoreMetricHandler(storage MetricSaver, log zap.Logger) *StoreMetricHand
 	}
 }
 
+// Store обрабатывает HTTP-запрос на сохранение одной метрики через URL-параметры.
+//
+// При успешной обработке возвращает HTTP 200 OK.
+// В случае ошибок возвращает HTTP 400 с сообщением об ошибке.
 func (h *StoreMetricHandler) Store(ginContext *gin.Context) {
 	ctx := ginContext.Request.Context()
 

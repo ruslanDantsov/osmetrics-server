@@ -9,6 +9,9 @@ import (
 	"github.com/ruslanDantsov/osmetrics-server/internal/agent/constants"
 )
 
+// HashBodyRestyMiddleware возвращает middleware-функцию для клиента resty,
+// которая вычисляет HMAC-SHA256 хэш от тела запроса и добавляет его
+// в заголовок запроса.
 func HashBodyRestyMiddleware(hashSecretKey string) func(c *resty.Client, req *resty.Request) error {
 	return func(c *resty.Client, req *resty.Request) error {
 		if req.Body == nil {

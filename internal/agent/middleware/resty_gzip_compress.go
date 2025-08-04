@@ -6,6 +6,13 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+// GzipRestyMiddleware возвращает middleware-функцию для клиента Resty,
+// которая автоматически сжимает тело запроса (если оно задано) с использованием gzip.
+//
+// Поддерживаются типы тела запроса: []byte и string.
+// Если тело запроса отсутствует или его тип не поддерживается, middleware ничего не делает.
+//
+// После сжатия middleware устанавливает заголовок `Content-Encoding: gzip`.
 func GzipRestyMiddleware() func(c *resty.Client, req *resty.Request) error {
 	return func(c *resty.Client, req *resty.Request) error {
 		if req.Body == nil {

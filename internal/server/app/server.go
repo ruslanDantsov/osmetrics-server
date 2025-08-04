@@ -12,11 +12,14 @@ import (
 	"github.com/ruslanDantsov/osmetrics-server/internal/server/repository/file"
 	"github.com/ruslanDantsov/osmetrics-server/internal/server/repository/memory"
 	"github.com/ruslanDantsov/osmetrics-server/internal/server/repository/postgre"
+	"net/http/pprof"
 
 	"go.uber.org/zap"
 	"net/http"
 )
 
+// ServerApp представляет основное приложение сервера.
+// Оно хранит конфигурацию, логгер, хендлеры и хранилище данных.
 type ServerApp struct {
 	cfg                *config.ServerConfig
 	logger             *zap.Logger
@@ -28,6 +31,7 @@ type ServerApp struct {
 	storage            Storager
 }
 
+// Storager определяет интерфейс для взаимодействия с хранилищем метрик.
 type Storager interface {
 	GetKnownMetrics(ctx context.Context) []string
 	GetMetric(ctx context.Context, metricID enum.MetricID) (*model.Metrics, bool)
@@ -37,6 +41,7 @@ type Storager interface {
 	Close()
 }
 
+// NewServerApp создаёт и инициализирует экземпляр ServerApp.
 func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) (*ServerApp, error) {
 	var storage Storager
 	var err error
@@ -70,6 +75,8 @@ func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) (*ServerApp, error)
 	}, nil
 }
 
+// Run запускает HTTP-сервер и регистрирует все маршруты,
+// настраивает middleware и маршруты профилирования pprof.
 func (app *ServerApp) Run() error {
 	router := gin.Default()
 
@@ -90,9 +97,24 @@ func (app *ServerApp) Run() error {
 	router.POST("/update/:type/:name/:value", app.storeMetricHandler.Store)
 	router.Any(`/:path`, app.commonHandler.ServeHTTP)
 
+	pprofGroup := router.Group("/debug/pprof")
+	{
+		pprofGroup.GET("/", gin.WrapH(http.HandlerFunc(pprof.Index)))
+		pprofGroup.GET("/cmdline", gin.WrapH(http.HandlerFunc(pprof.Cmdline)))
+		pprofGroup.GET("/profile", gin.WrapH(http.HandlerFunc(pprof.Profile)))
+		pprofGroup.GET("/symbol", gin.WrapH(http.HandlerFunc(pprof.Symbol)))
+		pprofGroup.GET("/trace", gin.WrapH(http.HandlerFunc(pprof.Trace)))
+		pprofGroup.GET("/heap", gin.WrapH(http.HandlerFunc(pprof.Handler("heap").ServeHTTP)))
+		pprofGroup.GET("/goroutine", gin.WrapH(http.HandlerFunc(pprof.Handler("goroutine").ServeHTTP)))
+		pprofGroup.GET("/threadcreate", gin.WrapH(http.HandlerFunc(pprof.Handler("threadcreate").ServeHTTP)))
+		pprofGroup.GET("/block", gin.WrapH(http.HandlerFunc(pprof.Handler("block").ServeHTTP)))
+		pprofGroup.GET("/mutex", gin.WrapH(http.HandlerFunc(pprof.Handler("mutex").ServeHTTP)))
+	}
+
 	return http.ListenAndServe(app.cfg.Address, router)
 }
 
+// Close завершает работу приложения.
 func (app *ServerApp) Close() {
 	app.storage.Close()
 }

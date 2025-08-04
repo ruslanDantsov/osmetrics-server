@@ -11,6 +11,10 @@ import (
 	"strings"
 )
 
+// StoreJSON обрабатывает HTTP-запрос на сохранение одной метрики в формате JSON.
+//
+// При успешной обработке возвращает сохранённую метрику и HTTP 200 OK.
+// В случае ошибок возвращает соответствующий HTTP статус и сообщение об ошибке.
 func (h *StoreMetricHandler) StoreJSON(ginContext *gin.Context) {
 	var metricRequest model.Metrics
 

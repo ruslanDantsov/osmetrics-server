@@ -10,18 +10,38 @@ import (
 	"time"
 )
 
+// ServerConfig содержит конфигурационные параметры для запуска сервера.
 type ServerConfig struct {
-	Address                string        `short:"a" long:"address" env:"ADDRESS" default:"localhost:8080" description:"Server host address"`
-	LogLevel               string        `short:"l" long:"log" env:"LOG_LEVEL" default:"INFO" description:"Log Level"`
-	StoreIntervalInSeconds int           `short:"i" long:"interval" env:"STORE_INTERVAL" default:"300" description:"Interval in seconds for storing metrics to file"`
-	StoreInterval          time.Duration `long:"-" description:"Derived duration from ReportIntervalInSeconds"`
-	FileStoragePath        string        `short:"f" long:"path" env:"FILE_STORAGE_PATH" default:"" description:"Path to file with metrics data"`
-	RestoreRaw             string        `short:"r" long:"restore" env:"RESTORE" description:"Flag indicating whether to load previously saved metrics data" no-ini:"true"`
-	Restore                bool          `ignored:"true"`
-	DatabaseConnection     string        `short:"d" long:"database" env:"DATABASE_DSN" description:"Database connection string"`
-	HashKey                string        `long:"key" short:"k" env:"KEY" description:"Secret key for hashing"`
+	// Address — Адрес хоста сервера.
+	Address string `short:"a" long:"address" env:"ADDRESS" default:"localhost:8080" description:"Server host address"`
+
+	// LogLevel — Уровень логирования.
+	LogLevel string `short:"l" long:"log" env:"LOG_LEVEL" default:"INFO" description:"Log Level"`
+
+	// StoreIntervalInSeconds — Интервал (в секундах) сохранения метрик в файл.
+	StoreIntervalInSeconds int `short:"i" long:"interval" env:"STORE_INTERVAL" default:"300" description:"Interval in seconds for storing metrics to file"`
+
+	// StoreInterval — Интервал в формате time.Duration, вычисляется на основе StoreIntervalInSeconds.
+	StoreInterval time.Duration `long:"-" description:"Derived duration from ReportIntervalInSeconds"`
+
+	// FileStoragePath — Путь к файлу хранения метрик.
+	FileStoragePath string `short:"f" long:"path" env:"FILE_STORAGE_PATH" default:"" description:"Path to file with metrics data"`
+
+	// RestoreRaw — Флаг восстановления ранее сохранённых метрик.
+	RestoreRaw string `short:"r" long:"restore" env:"RESTORE" description:"Flag indicating whether to load previously saved metrics data" no-ini:"true"`
+
+	// Restore — Флаг восстановления ранее сохранённых метрик, вычисляемый на основании RestoreRaw.
+	Restore bool `ignored:"true"`
+
+	// DatabaseConnection — Строка подключения к базе данных.
+	DatabaseConnection string `short:"d" long:"database" env:"DATABASE_DSN" description:"Database connection string"`
+
+	// HashKey — Секретный ключ для хеширования.
+	HashKey string `long:"key" short:"k" env:"KEY" description:"Secret key for hashing"`
 }
 
+// NewServerConfig создаёт и инициализирует конфигурацию сервера на основе аргументов командной строки.
+// При необходимости также создаёт директорию для хранения метрик.
 func NewServerConfig(cliArgs []string) (*ServerConfig, error) {
 	config := &ServerConfig{}
 	parser := flags.NewParser(config, flags.Default)

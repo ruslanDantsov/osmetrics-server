@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+// NewLoggerRequestMiddleware возвращает middleware для Gin,
+// который логирует информацию о каждом HTTP-запросе.
+//
+// Middleware фиксирует время начала обработки запроса,
+// после выполнения запроса вычисляет длительность, HTTP-статус,
+// размер ответа и логирует эти данные с помощью переданного логгера.
 func NewLoggerRequestMiddleware(logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()

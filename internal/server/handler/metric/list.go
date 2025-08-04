@@ -7,10 +7,14 @@ import (
 	"net/http"
 )
 
+// KnownMetricsGetter предоставляет интерфейс для получения списка известных метрик.
 type KnownMetricsGetter interface {
 	GetKnownMetrics(ctx context.Context) []string
 }
 
+// List обрабатывает HTTP-запрос для получения списка всех известных метрик.
+//
+// Формирует HTML-страницу со списком метрик, полученных из хранилища.
 func (h *GetMetricHandler) List(ginContext *gin.Context) {
 	ctx := ginContext.Request.Context()
 

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/agent/config"
@@ -14,6 +15,8 @@ import (
 	"time"
 )
 
+// AgentApp представляет основное приложение агента, которое отвечает за сбор и передачу метрик.
+// AgentApp хранить информацию для запуска агента
 type AgentApp struct {
 	config        *config.AgentConfig
 	logger        *zap.Logger
@@ -21,6 +24,7 @@ type AgentApp struct {
 	metricService *service.MetricService
 }
 
+// NewAgentApp создает новый экземпляр AgentApp с заданной конфигурацией и логгером.
 func NewAgentApp(cfg *config.AgentConfig, log *zap.Logger) *AgentApp {
 
 	client := resty.New()
@@ -39,14 +43,17 @@ func NewAgentApp(cfg *config.AgentConfig, log *zap.Logger) *AgentApp {
 	}
 }
 
-func (app *AgentApp) Run() error {
+// Run запускает агент: собирает метрики, отправляет их и управляет жизненным циклом воркеров.
+//
+// Ожидает готовности сервера перед запуском сбора метрик.
+// Использует контекст для управления завершением работы.
+func (app *AgentApp) Run(ctx context.Context) error {
 	if err := app.waitForServer(); err != nil {
 		return err
 	}
 
 	metricChan := make(chan model.Metrics, constants.MetricChannelSize)
 
-	var doneChan = make(chan struct{})
 	var wg sync.WaitGroup
 	wg.Add(1)
 
@@ -55,8 +62,14 @@ func (app *AgentApp) Run() error {
 		ticker := time.NewTicker(app.config.PollInterval)
 		defer ticker.Stop()
 
-		for range ticker.C {
-			app.metricService.CollectMetrics(metricChan, doneChan)
+		for {
+			select {
+			case <-ticker.C:
+				app.metricService.CollectMetrics(metricChan)
+			case <-ctx.Done():
+				app.logger.Info("Collector received shutdown signal")
+				return
+			}
 		}
 	}()
 
@@ -66,8 +79,14 @@ func (app *AgentApp) Run() error {
 		ticker := time.NewTicker(app.config.PollInterval)
 		defer ticker.Stop()
 
-		for range ticker.C {
-			app.metricService.CollectAdditionalMetrics(metricChan, doneChan)
+		for {
+			select {
+			case <-ticker.C:
+				app.metricService.CollectAdditionalMetrics(metricChan)
+			case <-ctx.Done():
+				app.logger.Info("Additional collector received shutdown signal")
+				return
+			}
 		}
 	}()
 
@@ -75,16 +94,12 @@ func (app *AgentApp) Run() error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			app.metricService.Worker(metricChan, doneChan)
+			app.metricService.Worker(ctx, metricChan)
 		}()
 	}
 
-	<-doneChan
-	app.metricService.Log.Info("Shutting down, waiting for workers to finish...")
-
-	close(metricChan)
-
 	wg.Wait()
+	close(metricChan)
 
 	return nil
 }

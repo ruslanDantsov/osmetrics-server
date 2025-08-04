@@ -10,12 +10,14 @@ import (
 	"sync"
 )
 
+// MemStorage реализация хранения метрик в памяти с потокобезопасным доступом.
 type MemStorage struct {
 	Mu      sync.RWMutex
 	Storage map[string]*model.Metrics
 	Log     zap.Logger
 }
 
+// NewMemStorage создает и возвращает новый экземпляр хранилища в памяти.
 func NewMemStorage(log zap.Logger) *MemStorage {
 	return &MemStorage{
 		Storage: make(map[string]*model.Metrics),
@@ -23,14 +25,17 @@ func NewMemStorage(log zap.Logger) *MemStorage {
 	}
 }
 
+// HealthCheck проверяет состояние MemStorage.
 func (s *MemStorage) HealthCheck(ctx context.Context) error {
 	return nil
 }
 
+// Close закрывает MemStorage.
 func (s *MemStorage) Close() {
 	//For this type of storage we don't need implementation
 }
 
+// GetKnownMetrics возвращает список всех известных метрик
 func (s *MemStorage) GetKnownMetrics(ctx context.Context) []string {
 	metricNames := make([]string, 0, len(s.Storage))
 	for name := range s.Storage {
@@ -39,6 +44,7 @@ func (s *MemStorage) GetKnownMetrics(ctx context.Context) []string {
 	return metricNames
 }
 
+// GetMetric возвращает метрику по заданному идентификатору.
 func (s *MemStorage) GetMetric(ctx context.Context, metricID enum.MetricID) (*model.Metrics, bool) {
 	if val, found := s.Storage[metricID.String()]; found {
 		if val.MType == constants.CounterMetricType {
@@ -54,6 +60,7 @@ func (s *MemStorage) GetMetric(ctx context.Context, metricID enum.MetricID) (*mo
 	return nil, false
 }
 
+// SaveMetric сохраняет или обновляет одну метрику в хранилище.
 func (s *MemStorage) SaveMetric(ctx context.Context, metric *model.Metrics) (*model.Metrics, error) {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
@@ -82,6 +89,7 @@ func (s *MemStorage) SaveMetric(ctx context.Context, metric *model.Metrics) (*mo
 	return metric, nil
 }
 
+// SaveAllMetrics сохраняет список метрик в хранилище.
 func (s *MemStorage) SaveAllMetrics(ctx context.Context, metricList model.MetricsList) (model.MetricsList, error) {
 	var savedMetrics model.MetricsList
 

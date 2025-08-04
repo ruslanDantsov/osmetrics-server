@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/agent/config"
@@ -16,28 +17,34 @@ import (
 	"sync"
 )
 
+// RestClient определяет интерфейс для HTTP-клиента, совместимого с resty.
 type RestClient interface {
 	R() *resty.Request
 }
 
+// MetricService отвечает за сбор и отправку метрик.
+// Хранит текущее состояние метрик, использует клиент для HTTP-запросов и логгер.
 type MetricService struct {
 	mu      sync.Mutex
-	Log     *zap.Logger
-	Client  RestClient
+	log     *zap.Logger
+	client  RestClient
 	config  *config.AgentConfig
-	Metrics map[enum.MetricID]interface{}
+	metrics map[enum.MetricID]interface{}
 }
 
+// NewMetricService создает и возвращает новый экземпляр MetricService.
 func NewMetricService(log *zap.Logger, client RestClient, agentConfig *config.AgentConfig) *MetricService {
 	return &MetricService{
-		Log:     log,
-		Client:  client,
+		log:     log,
+		client:  client,
 		config:  agentConfig,
-		Metrics: make(map[enum.MetricID]interface{}),
+		metrics: make(map[enum.MetricID]interface{}),
 	}
 }
-func (ms *MetricService) CollectMetrics(metricChan chan<- model.Metrics, doneChan <-chan struct{}) {
-	ms.Log.Info("Collecting metrics...")
+
+// CollectMetrics собирает метрики из runtime и отправляет их в канал metricChan.
+func (ms *MetricService) CollectMetrics(metricChan chan<- model.Metrics) {
+	ms.log.Info("Collecting metrics...")
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
@@ -76,15 +83,10 @@ func (ms *MetricService) CollectMetrics(metricChan chan<- model.Metrics, doneCha
 	}
 
 	for id, value := range metrics {
-		select {
-		case <-doneChan:
-			ms.Log.Info("Stopping additional metrics collection due to shutdown")
-			return
-		case metricChan <- model.Metrics{
+		metricChan <- model.Metrics{
 			ID:    id,
 			MType: constants.GaugeMetricType,
 			Value: &value,
-		}:
 		}
 	}
 
@@ -96,8 +98,10 @@ func (ms *MetricService) CollectMetrics(metricChan chan<- model.Metrics, doneCha
 	}
 }
 
-func (ms *MetricService) CollectAdditionalMetrics(metricChan chan<- model.Metrics, doneChan <-chan struct{}) {
-	ms.Log.Info("Collecting additional metrics...")
+// CollectAdditionalMetrics собирает дополнительные системные метрики,
+// включая свободную и общую память, а также количество CPU, и отправляет их в канал.
+func (ms *MetricService) CollectAdditionalMetrics(metricChan chan<- model.Metrics) {
+	ms.log.Info("Collecting additional metrics...")
 	memInfo, _ := mem.VirtualMemory()
 	cpuCount, _ := cpu.Counts(false)
 
@@ -111,40 +115,36 @@ func (ms *MetricService) CollectAdditionalMetrics(metricChan chan<- model.Metric
 	}
 
 	for id, value := range metrics {
-		select {
-		case <-doneChan:
-			ms.Log.Info("Stopping additional metrics collection due to shutdown")
-			return
-		case metricChan <- model.Metrics{
+		metricChan <- model.Metrics{
 			ID:    id,
 			MType: constants.GaugeMetricType,
 			Value: &value,
-		}:
 		}
-
 	}
 }
 
-func (ms *MetricService) Worker(metricChan <-chan model.Metrics, doneChan <-chan struct{}) {
+// Worker запускает воркер, который читает метрики из канала metricChan
+// и отправляет их на сервер. Завершается при отмене контекста.
+func (ms *MetricService) Worker(ctx context.Context, metricChan chan model.Metrics) {
 	for {
 		select {
-		case <-doneChan:
-			ms.Log.Info("Worker received shutdown signal")
+		case <-ctx.Done():
+			ms.log.Info("Worker received shutdown signal")
 			return
 		case metric, ok := <-metricChan:
 			if !ok {
-				ms.Log.Info("Metric channel closed, worker exiting")
+				ms.log.Info("Metric channel closed, worker exiting")
 				return
 			}
 
-			if err := ms.sendMetric(metric); err != nil {
-				ms.Log.Error("Failed to send metric", zap.String("id", string(metric.ID)), zap.Error(err))
+			if err := ms.sendMetric(ctx, metric); err != nil {
+				ms.log.Error("Failed to send metric", zap.String("id", string(metric.ID)), zap.Error(err))
 			}
 		}
 	}
 }
 
-func (ms *MetricService) sendMetric(metric model.Metrics) error {
+func (ms *MetricService) sendMetric(ctx context.Context, metric model.Metrics) error {
 	url := fmt.Sprintf(constants.UpdateMetricURL, ms.config.Address)
 
 	json, err := metric.MarshalJSON()
@@ -152,9 +152,10 @@ func (ms *MetricService) sendMetric(metric model.Metrics) error {
 		return fmt.Errorf("failed to marshal metric: %w", err)
 	}
 
-	resp, err := ms.Client.R().
+	resp, err := ms.client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(json).
+		SetContext(ctx).
 		Post(url)
 
 	if err != nil {
@@ -168,13 +169,14 @@ func (ms *MetricService) sendMetric(metric model.Metrics) error {
 	return nil
 }
 
+// SendAllMetrics отправляет все накопленные метрики в виде батча на сервер.
 func (ms *MetricService) SendAllMetrics() {
-	ms.Log.Info("Sending batch of metrics...")
+	ms.log.Info("Sending batch of metrics...")
 	url := fmt.Sprintf(constants.UpdateMetricsURL, ms.config.Address)
 	var metricList []model.Metrics
 
 	ms.mu.Lock()
-	for metricID, genericValue := range ms.Metrics {
+	for metricID, genericValue := range ms.metrics {
 		metric := model.Metrics{
 			ID: metricID,
 		}
@@ -186,7 +188,7 @@ func (ms *MetricService) SendAllMetrics() {
 		case int64:
 			metric.MType = constants.CounterMetricType
 			metric.Delta = &value
-			ms.Metrics[metricID] = int64(0)
+			ms.metrics[metricID] = int64(0)
 		}
 		metricList = append(metricList, metric)
 	}
@@ -194,19 +196,19 @@ func (ms *MetricService) SendAllMetrics() {
 
 	json, err := model.MetricsList(metricList).MarshalJSON()
 	if err != nil {
-		ms.Log.Error("failed to marshal batch of metrics: %w", zap.Error(err))
+		ms.log.Error("failed to marshal batch of metrics: %w", zap.Error(err))
 	}
 
-	resp, err := ms.Client.R().
+	resp, err := ms.client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(json).
 		Post(url)
 
 	if err != nil {
-		ms.Log.Error("failed to send batch of metrics: %w", zap.Error(err))
+		ms.log.Error("failed to send batch of metrics: %w", zap.Error(err))
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		ms.Log.Error(fmt.Sprintf("bad response for batch of metrics %v", resp.StatusCode()))
+		ms.log.Error(fmt.Sprintf("bad response for batch of metrics %v", resp.StatusCode()))
 	}
 }

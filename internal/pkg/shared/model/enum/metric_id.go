@@ -5,8 +5,10 @@ import (
 	"strings"
 )
 
+// MetricID представляет собой строковый идентификатор метрики.
 type MetricID string
 
+// Список возможных значений идентификаторов метрик.
 const (
 	Alloc           MetricID = "Alloc"
 	BuckHashSys     MetricID = "BuckHashSys"
@@ -77,11 +79,13 @@ var validMetricIDs = map[MetricID]struct{}{
 	CPUutilization1: {},
 }
 
+// IsValid проверяет, является ли идентификатор метрики допустимым.
 func (m *MetricID) IsValid() bool {
 	_, ok := validMetricIDs[*m]
 	return ok
 }
 
+// UnmarshalText преобразует текст в MetricID и проверяет его валидность.
 func (m *MetricID) UnmarshalText(data []byte) error {
 	id, err := ParseMetricID(string(data))
 	if err != nil {
@@ -91,14 +95,18 @@ func (m *MetricID) UnmarshalText(data []byte) error {
 	return nil
 }
 
+// MarshalText преобразует MetricID в срез байт.
 func (m *MetricID) MarshalText() ([]byte, error) {
 	return []byte(*m), nil
 }
 
+// String возвращает строковое представление идентификатора метрики.
 func (m *MetricID) String() string {
 	return string(*m)
 }
 
+// ParseMetricID возвращает MetricID, созданный из переданной строки,
+// или ошибку, если строка пустая.
 func ParseMetricID(s string) (MetricID, error) {
 	trimmed := strings.TrimSpace(s)
 	if trimmed == "" {

@@ -12,16 +12,19 @@ import (
 	"strconv"
 )
 
+// MetricGetter определяет интерфейс для получения метрик по их идентификатору.
 type MetricGetter interface {
 	GetMetric(ctx context.Context, metricID enum.MetricID) (*model.Metrics, bool)
 	GetKnownMetrics(ctx context.Context) []string
 }
 
+// GetMetricHandler представляет обработчик HTTP-запросов для получения метрик.
 type GetMetricHandler struct {
 	Storage MetricGetter
 	Log     zap.Logger
 }
 
+// NewGetMetricHandler создаёт новый экземпляр GetMetricHandler.
 func NewGetMetricHandler(storage MetricGetter, log zap.Logger) *GetMetricHandler {
 	return &GetMetricHandler{
 		Storage: storage,
@@ -29,6 +32,10 @@ func NewGetMetricHandler(storage MetricGetter, log zap.Logger) *GetMetricHandler
 	}
 }
 
+// Get обрабатывает входящий HTTP-запрос для получения значения метрики.
+//
+// Определяет тип метрики (gauge или counter) и вызывает соответствующий обработчик.
+// В случае некорректного типа возвращает ошибку 400.
 func (h *GetMetricHandler) Get(ginContext *gin.Context) {
 	metricType := ginContext.Param(constants.URLParamMetricType)
 	switch metricType {
