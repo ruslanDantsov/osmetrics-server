@@ -1,3 +1,4 @@
+// Package file provides persistent storage implementation that saves metrics data to a file
 package file
 
 import (

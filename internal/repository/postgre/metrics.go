@@ -1,3 +1,4 @@
+// Package postgre provides persistent storage implementation that saves metrics data to DB
 package postgre
 
 import (

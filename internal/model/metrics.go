@@ -1,3 +1,4 @@
+// Package model defines the core data structures of Metrics
 package model
 
 import (

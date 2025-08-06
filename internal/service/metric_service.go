@@ -1,3 +1,4 @@
+// Package service provides functionality for collecting and sending system metrics.
 package service
 
 import (

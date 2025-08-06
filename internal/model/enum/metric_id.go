@@ -1,3 +1,4 @@
+// Package enum defines the enum data structures
 package enum
 
 import (

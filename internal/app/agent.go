@@ -1,3 +1,5 @@
+// Package app provides the core application logic for the agent.
+// It handles configuration, initialization, and the main execution loop.
 package app
 
 import (

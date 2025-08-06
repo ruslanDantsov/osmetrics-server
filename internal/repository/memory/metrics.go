@@ -1,3 +1,4 @@
+// Package memory provides persistent storage implementation that saves metrics data in memory
 package memory
 
 import (

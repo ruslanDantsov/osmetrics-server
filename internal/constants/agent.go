@@ -1,3 +1,4 @@
+// Package constants provides constants for the osmetrics agent.
 package constants
 
 import "time"
