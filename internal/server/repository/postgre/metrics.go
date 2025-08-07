@@ -1,3 +1,4 @@
+// Package postgre provides persistent storage implementation that saves metrics data to DB
 package postgre
 
 import (
@@ -26,7 +27,7 @@ type PostgreStorage struct {
 
 // NewPostgreStorage создает новый экземпляр PostgreStorage.
 func NewPostgreStorage(log zap.Logger, connectionString string) (*PostgreStorage, error) {
-	if err := applyMigrations(connectionString); err != nil {
+	if err := applyMigrations(connectionString, log); err != nil {
 		return nil, err
 	}
 
@@ -115,7 +116,8 @@ func (s *PostgreStorage) SaveAllMetrics(ctx context.Context, metricList model.Me
 
 	defer func() {
 		if err != nil {
-			tx.Rollback(ctx)
+			err = tx.Rollback(ctx)
+			s.Log.Error(err.Error())
 		}
 	}()
 
@@ -167,8 +169,9 @@ func (s *PostgreStorage) saveCounterMetric(ctx context.Context, metric *model.Me
 	}
 
 	defer func() {
+		err = tx.Rollback(ctx)
 		if err != nil {
-			tx.Rollback(ctx)
+			s.Log.Error(err.Error())
 		}
 	}()
 
@@ -326,12 +329,16 @@ func (s *PostgreStorage) Close() {
 	}
 }
 
-func applyMigrations(connectionString string) error {
+func applyMigrations(connectionString string, log zap.Logger) error {
 	sqlDB, err := sql.Open("pgx", connectionString)
 	if err != nil {
 		return err
 	}
-	defer sqlDB.Close()
+	defer func() {
+		if err := sqlDB.Close(); err != nil {
+			log.Error(err.Error())
+		}
+	}()
 
 	if err := goose.SetDialect("postgres"); err != nil {
 		return err

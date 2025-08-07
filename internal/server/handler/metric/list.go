@@ -32,5 +32,8 @@ func (h *GetMetricHandler) List(ginContext *gin.Context) {
 
 	ginContext.Header("Content-Type", "text/html")
 	ginContext.Status(http.StatusOK)
-	ginContext.Writer.Write([]byte(htmlContent))
+	_, err := ginContext.Writer.Write([]byte(htmlContent))
+	if err != nil {
+		return
+	}
 }

@@ -2,7 +2,6 @@ package config
 
 import (
 	"github.com/stretchr/testify/assert"
-	"os"
 	"testing"
 	"time"
 )
@@ -10,8 +9,7 @@ import (
 func TestAgentConfig_FromEnv(t *testing.T) {
 	expectedAddress := "localhost:1234"
 
-	os.Setenv("ADDRESS", expectedAddress)
-	defer os.Unsetenv("ADDRESS")
+	t.Setenv("ADDRESS", expectedAddress)
 
 	config := NewAgentConfig([]string{})
 

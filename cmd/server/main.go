@@ -1,14 +1,40 @@
+// Package main is the entry point for the osmetrics server.
 package main
 
 import (
-	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/logger"
+	"fmt"
+	"github.com/ruslanDantsov/osmetrics-server/internal/logger"
 	"github.com/ruslanDantsov/osmetrics-server/internal/server/app"
 	"github.com/ruslanDantsov/osmetrics-server/internal/server/config"
 	"go.uber.org/zap"
+	"io"
 	"os"
 )
 
+var (
+	buildVersion = "N/A"
+	buildDate    = "N/A"
+	buildCommit  = "N/A"
+)
+
+func printBuildInfo(w io.Writer) {
+	_, err := fmt.Fprintf(w, "Build version: %s\n", buildVersion)
+	if err != nil {
+		return
+	}
+	_, err = fmt.Fprintf(w, "Build date: %s\n", buildDate)
+	if err != nil {
+		return
+	}
+	_, err = fmt.Fprintf(w, "Build commit: %s\n", buildCommit)
+	if err != nil {
+		return
+	}
+}
+
 func main() {
+	printBuildInfo(os.Stdout)
+
 	serverConfig, err := config.NewServerConfig(os.Args[1:])
 
 	if err != nil {
@@ -19,7 +45,12 @@ func main() {
 		logger.Log.Fatal("Logger initialized failed: %v", zap.Error(err))
 	}
 
-	defer logger.Log.Sync()
+	defer func(Log *zap.Logger) {
+		err := Log.Sync()
+		if err != nil {
+			logger.Log.Error(err.Error())
+		}
+	}(logger.Log)
 
 	logger.Log.Info("Starting server...")
 

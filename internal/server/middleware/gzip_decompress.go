@@ -22,7 +22,11 @@ func NewGzipDecompressionMiddleware() gin.HandlerFunc {
 				})
 				return
 			}
-			defer gzipReader.Close()
+			defer func() {
+				if err := gzipReader.Close(); err != nil {
+					err = c.Error(err)
+				}
+			}()
 
 			// Replace the request body with the decompressed stream
 			c.Request.Body = io.NopCloser(gzipReader)

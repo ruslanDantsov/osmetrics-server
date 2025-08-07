@@ -1,3 +1,4 @@
+// Package sqlqueries contains SQL statements for metrics database operations.
 package sqlqueries
 
 const (
