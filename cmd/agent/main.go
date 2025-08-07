@@ -2,13 +2,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/ruslanDantsov/osmetrics-server/internal/app"
-	"github.com/ruslanDantsov/osmetrics-server/internal/config"
-	"github.com/ruslanDantsov/osmetrics-server/internal/logger"
-	"go.uber.org/zap"
+	"github.com/ruslanDantsov/osmetrics-server/internal/agent/app"
+	"github.com/ruslanDantsov/osmetrics-server/internal/agent/config"
+	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/logger"
 	"io"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 var (
@@ -41,17 +43,16 @@ func main() {
 		logger.Log.Fatal(fmt.Sprintf("Logger initialized failed: %v", err.Error()))
 	}
 
-	defer func(Log *zap.Logger) {
-		err := Log.Sync()
-		if err != nil {
-			logger.Log.Error(err.Error())
-		}
-	}(logger.Log)
+	defer logger.Log.Sync()
 
 	logger.Log.Info("Starting agent...")
 
 	agentApp := app.NewAgentApp(agentConfig, logger.Log)
-	if err := agentApp.Run(); err != nil {
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	if err := agentApp.Run(ctx); err != nil {
 		logger.Log.Fatal(fmt.Sprintf("Agent start failed: %v", err.Error()))
 	}
 }

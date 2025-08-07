@@ -3,9 +3,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/ruslanDantsov/osmetrics-server/internal/app"
-	"github.com/ruslanDantsov/osmetrics-server/internal/config"
 	"github.com/ruslanDantsov/osmetrics-server/internal/logger"
+	"github.com/ruslanDantsov/osmetrics-server/internal/server/app"
+	"github.com/ruslanDantsov/osmetrics-server/internal/server/config"
 	"go.uber.org/zap"
 	"io"
 	"os"
