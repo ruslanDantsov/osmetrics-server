@@ -3,12 +3,16 @@ package model
 
 import (
 	"fmt"
-	"github.com/ruslanDantsov/osmetrics-server/internal/constants"
 	"github.com/ruslanDantsov/osmetrics-server/internal/model/enum"
 	"strconv"
 )
 
 //go:generate easyjson -all Metrics.go
+
+var (
+	GaugeMetricType   = "gauge"
+	CounterMetricType = "counter"
+)
 
 type Metrics struct {
 	ID    enum.MetricID `json:"id"`
@@ -27,7 +31,7 @@ func NewMetricWithRawValues(metricType string, metricIDRaw string, valueRaw stri
 	}
 
 	switch metricType {
-	case constants.GaugeMetricType:
+	case GaugeMetricType:
 		floatValue, err := strconv.ParseFloat(valueRaw, 64)
 		if err != nil {
 			return nil, err
@@ -38,7 +42,7 @@ func NewMetricWithRawValues(metricType string, metricIDRaw string, valueRaw stri
 			Value: &floatValue,
 		}, nil
 
-	case constants.CounterMetricType:
+	case CounterMetricType:
 		intValue, err := strconv.ParseInt(valueRaw, 10, 64)
 		if err != nil {
 			return nil, err
