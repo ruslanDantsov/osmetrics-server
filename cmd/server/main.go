@@ -20,7 +20,12 @@ func main() {
 		logger.Log.Fatal("Logger initialized failed: %v", zap.Error(err))
 	}
 
-	defer logger.Log.Sync()
+	defer func(Log *zap.Logger) {
+		err := Log.Sync()
+		if err != nil {
+			logger.Log.Error(err.Error())
+		}
+	}(logger.Log)
 
 	logger.Log.Info("Starting server...")
 

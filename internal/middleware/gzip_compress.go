@@ -17,7 +17,11 @@ func NewGzipCompressionMiddleware() gin.HandlerFunc {
 		}
 
 		gz := gzip.NewWriter(c.Writer)
-		defer gz.Close()
+		defer func() {
+			if err := gz.Close(); err != nil {
+				err = c.Error(err)
+			}
+		}()
 
 		c.Writer = &gzipResponseWriter{
 			ResponseWriter: c.Writer,

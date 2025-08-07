@@ -32,7 +32,11 @@ func setupTest() (*zap.Logger, *MockRestClient, *config.AgentConfig) {
 
 func TestAppendMetric(t *testing.T) {
 	logger, client, cfg := setupTest()
-	defer logger.Sync()
+	defer func() {
+		if err := logger.Sync(); err != nil {
+			t.Logf("failed to sync logger: %v", err)
+		}
+	}()
 
 	ms := NewMetricService(logger, client, cfg)
 
@@ -45,7 +49,11 @@ func TestAppendMetric(t *testing.T) {
 
 func TestAggregateMetric(t *testing.T) {
 	logger, client, cfg := setupTest()
-	defer logger.Sync()
+	defer func() {
+		if err := logger.Sync(); err != nil {
+			t.Logf("failed to sync logger: %v", err)
+		}
+	}()
 
 	ms := NewMetricService(logger, client, cfg)
 	ms.aggregateMetric(enum.PollCount, 5)
@@ -58,7 +66,11 @@ func TestAggregateMetric(t *testing.T) {
 
 func TestCollectMetrics(t *testing.T) {
 	logger, client, cfg := setupTest()
-	defer logger.Sync()
+	defer func() {
+		if err := logger.Sync(); err != nil {
+			t.Logf("failed to sync logger: %v", err)
+		}
+	}()
 
 	ms := NewMetricService(logger, client, cfg)
 

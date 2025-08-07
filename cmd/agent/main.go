@@ -6,6 +6,7 @@ import (
 	"github.com/ruslanDantsov/osmetrics-server/internal/app"
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
 	"github.com/ruslanDantsov/osmetrics-server/internal/logger"
+	"go.uber.org/zap"
 	"os"
 )
 
@@ -16,7 +17,12 @@ func main() {
 		logger.Log.Fatal(fmt.Sprintf("Logger initialized failed: %v", err.Error()))
 	}
 
-	defer logger.Log.Sync()
+	defer func(Log *zap.Logger) {
+		err := Log.Sync()
+		if err != nil {
+			logger.Log.Error(err.Error())
+		}
+	}(logger.Log)
 
 	logger.Log.Info("Starting agent...")
 

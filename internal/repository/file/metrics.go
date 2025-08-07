@@ -115,7 +115,11 @@ func (ps *PersistentStorage) saveToFile() {
 		ps.logger.Error("Failed to create save file", zap.Error(err))
 		return
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			ps.logger.Error(err.Error())
+		}
+	}()
 
 	if err := json.NewEncoder(file).Encode(ps.base.Storage); err != nil {
 		ps.logger.Error("Failed to encode metrics", zap.Error(err))
@@ -133,7 +137,11 @@ func (ps *PersistentStorage) loadFromFile() {
 		ps.logger.Error("Failed to open restore file", zap.Error(err))
 		return
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			ps.logger.Error(err.Error())
+		}
+	}()
 
 	data := make(map[string]*model.Metrics)
 	if err := json.NewDecoder(file).Decode(&data); err != nil {
