@@ -7,34 +7,10 @@ import (
 	"github.com/ruslanDantsov/osmetrics-server/internal/config"
 	"github.com/ruslanDantsov/osmetrics-server/internal/logger"
 	"go.uber.org/zap"
-	"io"
 	"os"
 )
 
-var (
-	buildVersion = "N/A"
-	buildDate    = "N/A"
-	buildCommit  = "N/A"
-)
-
-func printBuildInfo(w io.Writer) {
-	_, err := fmt.Fprintf(w, "Build version: %s\n", buildVersion)
-	if err != nil {
-		return
-	}
-	_, err = fmt.Fprintf(w, "Build date: %s\n", buildDate)
-	if err != nil {
-		return
-	}
-	_, err = fmt.Fprintf(w, "Build commit: %s\n", buildCommit)
-	if err != nil {
-		return
-	}
-}
-
 func main() {
-	printBuildInfo(os.Stdout)
-
 	agentConfig := config.NewAgentConfig(os.Args[1:])
 
 	if err := logger.Initialized(agentConfig.LogLevel); err != nil {
