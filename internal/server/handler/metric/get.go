@@ -1,3 +1,4 @@
+// Package metric provides HTTP handlers for system metrics.
 package metric
 
 import (
