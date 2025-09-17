@@ -8,11 +8,11 @@ import (
 	"encoding/pem"
 	"fmt"
 	"github.com/pkg/errors"
-	"io/ioutil"
+	"os"
 )
 
 func LoadPublicKey(path string) (*rsa.PublicKey, error) {
-	keyData, err := ioutil.ReadFile(path)
+	keyData, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func LoadPublicKey(path string) (*rsa.PublicKey, error) {
 }
 
 func LoadPrivateKey(path string) (*rsa.PrivateKey, error) {
-	b, err := ioutil.ReadFile(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
