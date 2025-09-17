@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/crypto"
 	"go.uber.org/zap"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -18,19 +18,20 @@ func NewDecryptPayloadMiddleware(privKey *rsa.PrivateKey, logger *zap.Logger) gi
 			return
 		}
 
-		// читаем тело
-		encryptedBody, err := ioutil.ReadAll(c.Request.Body)
+		// читаем тело запроса
+		encryptedBody, err := io.ReadAll(c.Request.Body)
 		if err != nil {
 			logger.Error("failed to read request body", zap.Error(err))
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
+		// восстанавливаем тело для последующих middleware
 		defer func() {
-			c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(encryptedBody))
+			c.Request.Body = io.NopCloser(bytes.NewBuffer(encryptedBody))
 		}()
 
-		// сначала декодируем base64
+		// сначала декодируем Base64
 		cipherData, err := base64.StdEncoding.DecodeString(string(encryptedBody))
 		if err != nil {
 			logger.Error("failed to decode base64 payload", zap.Error(err))
@@ -47,7 +48,7 @@ func NewDecryptPayloadMiddleware(privKey *rsa.PrivateKey, logger *zap.Logger) gi
 		}
 
 		// подменяем тело на JSON(Metrics)
-		c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(plain))
+		c.Request.Body = io.NopCloser(bytes.NewBuffer(plain))
 		c.Next()
 	}
 }
