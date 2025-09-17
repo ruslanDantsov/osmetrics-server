@@ -32,6 +32,8 @@ type AgentConfig struct {
 
 	// RateLimit — количество рабочих потоков, отправляющих метрики на сервер.
 	RateLimit int `long:"rate" short:"l" env:"RATE_LIMIT" default:"2" description:"Count of workers for sending metrics to the server"`
+
+	CryptoPubKeyPath string `short:"c" long:"crypto-key" env:"CRYPTO_KEY" description:"path to public key"`
 }
 
 // NewAgentConfig создаёт и инициализирует конфигурацию агента,

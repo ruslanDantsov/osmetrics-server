@@ -38,6 +38,8 @@ type ServerConfig struct {
 
 	// HashKey — Секретный ключ для хеширования.
 	HashKey string `long:"key" short:"k" env:"KEY" description:"Secret key for hashing"`
+
+	CryptoPrivateKeyPath string `short:"c" long:"crypto-key" env:"CRYPTO_KEY" description:"path to private key"`
 }
 
 // NewServerConfig создаёт и инициализирует конфигурацию сервера на основе аргументов командной строки.

@@ -2,12 +2,14 @@ package app
 
 import (
 	"context"
+	"crypto/rsa"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/agent/config"
 	"github.com/ruslanDantsov/osmetrics-server/internal/agent/constants"
 	middleware2 "github.com/ruslanDantsov/osmetrics-server/internal/agent/middleware"
 	"github.com/ruslanDantsov/osmetrics-server/internal/agent/service"
+	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/crypto"
 	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/model"
 	"go.uber.org/zap"
 	"net/http"
@@ -33,7 +35,16 @@ func NewAgentApp(cfg *config.AgentConfig, log *zap.Logger) *AgentApp {
 		client.OnBeforeRequest(middleware2.HashBodyRestyMiddleware(cfg.HashKey))
 	}
 
-	metricService := service.NewMetricService(log, client, cfg)
+	var pubKey *rsa.PublicKey
+	if len(cfg.CryptoPubKeyPath) > 0 {
+		k, err := crypto.LoadPublicKey(cfg.CryptoPubKeyPath)
+		if err != nil {
+			log.Fatal("failed to load public key", zap.Error(err))
+		}
+		pubKey = k
+	}
+
+	metricService := service.NewMetricService(log, client, cfg, pubKey)
 
 	return &AgentApp{
 		config:        cfg,
