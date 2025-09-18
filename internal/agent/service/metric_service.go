@@ -33,16 +33,18 @@ type MetricService struct {
 	config  *config.AgentConfig
 	metrics map[enum.MetricID]interface{}
 	pubKey  *rsa.PublicKey
+	localIP string
 }
 
 // NewMetricService создает и возвращает новый экземпляр MetricService.
-func NewMetricService(log *zap.Logger, client RestClient, agentConfig *config.AgentConfig, pubKey *rsa.PublicKey) *MetricService {
+func NewMetricService(log *zap.Logger, client RestClient, agentConfig *config.AgentConfig, pubKey *rsa.PublicKey, localIP string) *MetricService {
 	return &MetricService{
 		log:     log,
 		client:  client,
 		config:  agentConfig,
 		metrics: make(map[enum.MetricID]interface{}),
 		pubKey:  pubKey,
+		localIP: localIP,
 	}
 }
 
@@ -163,6 +165,7 @@ func (ms *MetricService) sendMetric(ctx context.Context, metric model.Metrics) e
 
 	resp, err := ms.client.R().
 		SetHeader("Content-Type", "application/json").
+		SetHeader("X-Real-IP", ms.localIP).
 		SetBody(payload).
 		SetContext(ctx).
 		Post(url)
