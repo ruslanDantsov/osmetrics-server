@@ -96,6 +96,7 @@ func (app *ServerApp) Run() error {
 	}
 	router.Use(middleware.NewGzipCompressionMiddleware())
 	router.Use(middleware.NewGzipDecompressionMiddleware())
+	router.Use(middleware.TrustedSubnetMiddleware(app.cfg.TrustedSubnet, app.logger))
 
 	router.GET(`/`, app.getMetricHandler.List)
 	router.GET("/health", app.healthHandler.GetHealth)
@@ -107,7 +108,6 @@ func (app *ServerApp) Run() error {
 		router.POST("/updates/", decryptMW, app.storeMetricHandler.StoreBatchJSON)
 		router.POST("/update/:type/:name/:value", decryptMW, app.storeMetricHandler.Store)
 	} else {
-		// fallback без дешифровки
 		router.POST("/value/", app.getMetricHandler.GetJSON)
 		router.POST("/update", app.storeMetricHandler.StoreJSON)
 		router.POST("/updates/", app.storeMetricHandler.StoreBatchJSON)

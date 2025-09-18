@@ -24,6 +24,7 @@ type AgentApp struct {
 	logger        *zap.Logger
 	client        resty.Client
 	metricService *service.MetricService
+	ip            string
 }
 
 // NewAgentApp создает новый экземпляр AgentApp с заданной конфигурацией и логгером.
@@ -44,13 +45,19 @@ func NewAgentApp(cfg *config.AgentConfig, log *zap.Logger) *AgentApp {
 		pubKey = k
 	}
 
-	metricService := service.NewMetricService(log, client, cfg, pubKey)
+	ip, err := service.GetLocalIP()
+	if err != nil {
+		log.Fatal("failed to get ip address", zap.Error(err))
+	}
+
+	metricService := service.NewMetricService(log, client, cfg, pubKey, ip)
 
 	return &AgentApp{
 		config:        cfg,
 		logger:        log,
 		client:        *client,
 		metricService: metricService,
+		ip:            ip,
 	}
 }
 
@@ -121,7 +128,9 @@ func (app *AgentApp) waitForServer() error {
 	sleepDelay := 1 * time.Second
 	attemps := 0
 	for {
-		resp, err := app.client.R().Get(url)
+		resp, err := app.client.R().
+			SetHeader("X-Real-IP", app.ip).
+			Get(url)
 
 		if err == nil && resp.StatusCode() == http.StatusOK {
 			app.logger.Info("Server is ready!")
