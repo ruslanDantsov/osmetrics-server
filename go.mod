@@ -11,6 +11,7 @@ require (
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/kisielk/errcheck v1.9.0
 	github.com/mailru/easyjson v0.9.0
+	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.24.3
 	github.com/shirou/gopsutil/v4 v4.25.6
 	github.com/stretchr/testify v1.10.0

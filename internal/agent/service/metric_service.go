@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"crypto/rsa"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/agent/config"
 	"github.com/ruslanDantsov/osmetrics-server/internal/agent/constants"
+	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/crypto"
 	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/model"
 	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/model/enum"
 	"github.com/shirou/gopsutil/v4/cpu"
@@ -30,15 +32,17 @@ type MetricService struct {
 	client  RestClient
 	config  *config.AgentConfig
 	metrics map[enum.MetricID]interface{}
+	pubKey  *rsa.PublicKey
 }
 
 // NewMetricService создает и возвращает новый экземпляр MetricService.
-func NewMetricService(log *zap.Logger, client RestClient, agentConfig *config.AgentConfig) *MetricService {
+func NewMetricService(log *zap.Logger, client RestClient, agentConfig *config.AgentConfig, pubKey *rsa.PublicKey) *MetricService {
 	return &MetricService{
 		log:     log,
 		client:  client,
 		config:  agentConfig,
 		metrics: make(map[enum.MetricID]interface{}),
+		pubKey:  pubKey,
 	}
 }
 
@@ -152,9 +156,14 @@ func (ms *MetricService) sendMetric(ctx context.Context, metric model.Metrics) e
 		return fmt.Errorf("failed to marshal metric: %w", err)
 	}
 
+	payload, err := crypto.EncryptPayload(ms.pubKey, json)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt metric: %w", err)
+	}
+
 	resp, err := ms.client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(json).
+		SetBody(payload).
 		SetContext(ctx).
 		Post(url)
 

@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"github.com/gin-gonic/gin"
+	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/crypto"
 	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/model"
 	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/model/enum"
 	"github.com/ruslanDantsov/osmetrics-server/internal/server/config"
@@ -80,6 +81,15 @@ func NewServerApp(cfg *config.ServerConfig, log *zap.Logger) (*ServerApp, error)
 func (app *ServerApp) Run() error {
 	router := gin.Default()
 
+	var decryptMW gin.HandlerFunc
+	if len(app.cfg.CryptoPrivateKeyPath) > 0 {
+		privKey, err := crypto.LoadPrivateKey(app.cfg.CryptoPrivateKeyPath)
+		if err != nil {
+			app.logger.Fatal("failed to load private key", zap.Error(err))
+		}
+		decryptMW = middleware.NewDecryptPayloadMiddleware(privKey, app.logger)
+	}
+
 	router.Use(middleware.NewLoggerRequestMiddleware(app.logger))
 	if len(app.cfg.HashKey) != 0 {
 		router.Use(middleware.HashCheckerMiddleware(app.cfg.HashKey, app.logger))
@@ -91,10 +101,18 @@ func (app *ServerApp) Run() error {
 	router.GET("/health", app.healthHandler.GetHealth)
 	router.GET("/ping", app.dbHealthHandler.GetDBHealth)
 	router.GET("/value/:type/:name", app.getMetricHandler.Get)
-	router.POST("/value/", app.getMetricHandler.GetJSON)
-	router.POST("/update", app.storeMetricHandler.StoreJSON)
-	router.POST("/updates/", app.storeMetricHandler.StoreBatchJSON)
-	router.POST("/update/:type/:name/:value", app.storeMetricHandler.Store)
+	if decryptMW != nil {
+		router.POST("/value/", decryptMW, app.getMetricHandler.GetJSON)
+		router.POST("/update", decryptMW, app.storeMetricHandler.StoreJSON)
+		router.POST("/updates/", decryptMW, app.storeMetricHandler.StoreBatchJSON)
+		router.POST("/update/:type/:name/:value", decryptMW, app.storeMetricHandler.Store)
+	} else {
+		// fallback без дешифровки
+		router.POST("/value/", app.getMetricHandler.GetJSON)
+		router.POST("/update", app.storeMetricHandler.StoreJSON)
+		router.POST("/updates/", app.storeMetricHandler.StoreBatchJSON)
+		router.POST("/update/:type/:name/:value", app.storeMetricHandler.Store)
+	}
 	router.Any(`/:path`, app.commonHandler.ServeHTTP)
 
 	pprofGroup := router.Group("/debug/pprof")
