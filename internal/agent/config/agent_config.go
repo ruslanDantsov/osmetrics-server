@@ -10,7 +10,7 @@ import (
 // AgentConfig содержит параметры конфигурации агента
 type AgentConfig struct {
 	// Address — адрес HTTP-сервера, к которому агент будет отправлять метрики.
-	Address string `long:"address" short:"a" env:"ADDRESS" default:"localhost:8080" description:"Address of the HTTP server"`
+	Address string `long:"address" short:"a" env:"ADDRESS" default:"localhost:8090" description:"Address of the HTTP server"`
 
 	// ReportIntervalInSeconds — частота (в секундах), с которой агент отправляет отчёты на сервер.
 	ReportIntervalInSeconds int `long:"report" short:"r" env:"REPORT_INTERVAL" default:"10" description:"Frequency (in seconds) for sending reports to the server"`

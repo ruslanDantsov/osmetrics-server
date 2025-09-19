@@ -13,7 +13,7 @@ import (
 // ServerConfig содержит конфигурационные параметры для запуска сервера.
 type ServerConfig struct {
 	// Address — Адрес хоста сервера.
-	Address string `short:"a" long:"address" env:"ADDRESS" default:"localhost:8080" description:"Server host address"`
+	Address string `short:"a" long:"address" env:"ADDRESS" default:"localhost:8090" description:"Server host address"`
 
 	// LogLevel — Уровень логирования.
 	LogLevel string `short:"l" long:"log" env:"LOG_LEVEL" default:"INFO" description:"Log Level"`
@@ -40,6 +40,8 @@ type ServerConfig struct {
 	HashKey string `long:"key" short:"k" env:"KEY" description:"Secret key for hashing"`
 
 	CryptoPrivateKeyPath string `short:"c" long:"crypto-key" env:"CRYPTO_KEY" description:"path to private key"`
+
+	TrustedSubnet string `short:"t"  env:"TRUSTED_SUBNET" description:"CIDR"`
 }
 
 // NewServerConfig создаёт и инициализирует конфигурацию сервера на основе аргументов командной строки.
