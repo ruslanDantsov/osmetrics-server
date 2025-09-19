@@ -13,7 +13,7 @@ import (
 // ServerConfig содержит конфигурационные параметры для запуска сервера.
 type ServerConfig struct {
 	// Address — Адрес хоста сервера.
-	Address string `short:"a" long:"address" env:"ADDRESS" default:"localhost:8080" description:"Server host address"`
+	Address string `short:"a" long:"address" env:"ADDRESS" default:"localhost:8090" description:"Server host address"`
 
 	// LogLevel — Уровень логирования.
 	LogLevel string `short:"l" long:"log" env:"LOG_LEVEL" default:"INFO" description:"Log Level"`

@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package metrics;
+
+option go_package = "github.com/ruslanDantsov/osmetrics-server/proto/metrics;metrics";
+
+
+// Метрика
+message Metric {
+  string id = 1;
+  string type = 2;
+  int64 delta = 3;
+  double value = 4;
+}
+
+
+// --- Сервис для внутренних операций сервера ---
+service MetricsService {
+  rpc StoreMetric(Metric) returns (MetricResponse);
+  rpc StoreMetricsBatch(MetricsBatchRequest) returns (MetricsBatchResponse);
+}
+
+// Ответы
+message MetricResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message MetricsBatchRequest {
+  repeated Metric metrics = 1;
+}
+
+message MetricsBatchResponse {
+  bool success = 1;
+  string error = 2;
+}

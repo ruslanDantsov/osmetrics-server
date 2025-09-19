@@ -4,48 +4,56 @@ import (
 	"context"
 	"crypto/rsa"
 	"fmt"
-	"github.com/go-resty/resty/v2"
 	"github.com/ruslanDantsov/osmetrics-server/internal/agent/config"
 	"github.com/ruslanDantsov/osmetrics-server/internal/agent/constants"
-	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/crypto"
 	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/model"
 	"github.com/ruslanDantsov/osmetrics-server/internal/pkg/shared/model/enum"
+	"github.com/ruslanDantsov/osmetrics-server/proto/metrics"
 	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/shirou/gopsutil/v4/mem"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 	"math/rand"
-	"net/http"
 	"runtime"
 	"sync"
 )
-
-// RestClient определяет интерфейс для HTTP-клиента, совместимого с resty.
-type RestClient interface {
-	R() *resty.Request
-}
 
 // MetricService отвечает за сбор и отправку метрик.
 // Хранит текущее состояние метрик, использует клиент для HTTP-запросов и логгер.
 type MetricService struct {
 	mu      sync.Mutex
 	log     *zap.Logger
-	client  RestClient
 	config  *config.AgentConfig
 	metrics map[enum.MetricID]interface{}
 	pubKey  *rsa.PublicKey
 	localIP string
+
+	conn   *grpc.ClientConn
+	client metrics.MetricsServiceClient
 }
 
 // NewMetricService создает и возвращает новый экземпляр MetricService.
-func NewMetricService(log *zap.Logger, client RestClient, agentConfig *config.AgentConfig, pubKey *rsa.PublicKey, localIP string) *MetricService {
+func NewMetricService(log *zap.Logger, agentConfig *config.AgentConfig, pubKey *rsa.PublicKey, localIP string) (*MetricService, error) {
+	conn, err := grpc.Dial(agentConfig.Address, grpc.WithInsecure())
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to gRPC server: %w", err)
+	}
+
+	client := metrics.NewMetricsServiceClient(conn)
+
 	return &MetricService{
 		log:     log,
-		client:  client,
 		config:  agentConfig,
 		metrics: make(map[enum.MetricID]interface{}),
 		pubKey:  pubKey,
 		localIP: localIP,
-	}
+		conn:    conn,
+		client:  client,
+	}, nil
+}
+
+func (ms *MetricService) Close() error {
+	return ms.conn.Close()
 }
 
 // CollectMetrics собирает метрики из runtime и отправляет их в канал metricChan.
@@ -151,76 +159,24 @@ func (ms *MetricService) Worker(ctx context.Context, metricChan chan model.Metri
 }
 
 func (ms *MetricService) sendMetric(ctx context.Context, metric model.Metrics) error {
-	url := fmt.Sprintf(constants.UpdateMetricURL, ms.config.Address)
-
-	json, err := metric.MarshalJSON()
+	protoMetric := convertToProto(metric)
+	_, err := ms.client.StoreMetric(ctx, protoMetric)
 	if err != nil {
-		return fmt.Errorf("failed to marshal metric: %w", err)
+		return fmt.Errorf("failed to send metric via gRPC: %w", err)
 	}
-
-	payload, err := crypto.EncryptPayload(ms.pubKey, json)
-	if err != nil {
-		return fmt.Errorf("failed to encrypt metric: %w", err)
-	}
-
-	resp, err := ms.client.R().
-		SetHeader("Content-Type", "application/json").
-		SetHeader("X-Real-IP", ms.localIP).
-		SetBody(payload).
-		SetContext(ctx).
-		Post(url)
-
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		return fmt.Errorf("bad response for SendingMetric %s: %v", metric.ID, resp.StatusCode())
-	}
-
 	return nil
 }
 
-// SendAllMetrics отправляет все накопленные метрики в виде батча на сервер.
-func (ms *MetricService) SendAllMetrics() {
-	ms.log.Info("Sending batch of metrics...")
-	url := fmt.Sprintf(constants.UpdateMetricsURL, ms.config.Address)
-	var metricList []model.Metrics
-
-	ms.mu.Lock()
-	for metricID, genericValue := range ms.metrics {
-		metric := model.Metrics{
-			ID: metricID,
-		}
-
-		switch value := genericValue.(type) {
-		case float64:
-			metric.MType = constants.GaugeMetricType
-			metric.Value = &value
-		case int64:
-			metric.MType = constants.CounterMetricType
-			metric.Delta = &value
-			ms.metrics[metricID] = int64(0)
-		}
-		metricList = append(metricList, metric)
+func convertToProto(m model.Metrics) *metrics.Metric {
+	metric := &metrics.Metric{
+		Id:   string(m.ID),
+		Type: m.MType,
 	}
-	ms.mu.Unlock()
-
-	json, err := model.MetricsList(metricList).MarshalJSON()
-	if err != nil {
-		ms.log.Error("failed to marshal batch of metrics: %w", zap.Error(err))
+	if m.Delta != nil {
+		metric.Delta = *m.Delta
 	}
-
-	resp, err := ms.client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(json).
-		Post(url)
-
-	if err != nil {
-		ms.log.Error("failed to send batch of metrics: %w", zap.Error(err))
+	if m.Value != nil {
+		metric.Value = *m.Value
 	}
-
-	if resp.StatusCode() != http.StatusOK {
-		ms.log.Error(fmt.Sprintf("bad response for batch of metrics %v", resp.StatusCode()))
-	}
+	return metric
 }
