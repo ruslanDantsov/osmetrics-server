@@ -37,13 +37,13 @@ func (h *ServerMetricsHandler) StoreMetric(ctx context.Context, req *metrics.Met
 	if req == nil {
 		return &metrics.MetricResponse{Success: false, Error: "metric is nil"}, nil
 	}
-	metricId, err := enum.ParseMetricID(req.Id)
+	metricID, err := enum.ParseMetricID(req.Id)
 	if err != nil {
 		h.logger.Error("invalid metric ID", zap.String("id", req.Id), zap.Error(err))
 		return &metrics.MetricResponse{Success: false, Error: "invalid metric ID"}, nil
 	}
 	var metricRequest = model.Metrics{
-		ID:    metricId,
+		ID:    metricID,
 		MType: req.Type,
 		Delta: &req.Delta,
 		Value: &req.Value,

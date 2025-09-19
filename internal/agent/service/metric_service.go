@@ -13,6 +13,7 @@ import (
 	"github.com/shirou/gopsutil/v4/mem"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"math/rand"
 	"runtime"
 	"sync"
@@ -34,7 +35,7 @@ type MetricService struct {
 
 // NewMetricService создает и возвращает новый экземпляр MetricService.
 func NewMetricService(log *zap.Logger, agentConfig *config.AgentConfig, pubKey *rsa.PublicKey, localIP string) (*MetricService, error) {
-	conn, err := grpc.Dial(agentConfig.Address, grpc.WithInsecure())
+	conn, err := grpc.NewClient(agentConfig.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to gRPC server: %w", err)
 	}
